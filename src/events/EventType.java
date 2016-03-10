@@ -1,9 +1,10 @@
 package events;
 
 public enum EventType {
-	NEXT,
-	PREV,
-	CLOSE,
+	TERMINATE,
 	GOTO,
-	NEWLEADER;
+	NEWLEADER, 
+	HELLO, 
+	ANSWER, 
+	JOIN;
 }

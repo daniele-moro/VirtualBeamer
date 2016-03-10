@@ -1,6 +1,8 @@
 package events;
 
-public class GenericEvent {
+import java.io.Serializable;
+
+public abstract class GenericEvent implements Serializable {
 
 	EventType type;
 	
