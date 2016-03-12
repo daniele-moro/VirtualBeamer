@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Observable;
 
 public class Session extends Observable{
+	public final static int port = 6789;
 	
 
 	private User leader;
@@ -12,15 +13,18 @@ public class Session extends Observable{
 	private List<User> joined;
 	private String actualSlide;
 	private String path;
+	private String sessionIP;
 	
 	
-	public Session(User leader, String path, String sessionName) {
+
+	public Session(User leader, String path, String sessionName, String SessionIP) {
 		this.leader = leader;
 		this.setSessionName(sessionName);
 		this.joined = new ArrayList<User>();
 		joined.add(leader);
 		this.actualSlide = "-1";
 		this.path = path;
+		this.sessionIP=sessionIP;
 	}
 	
 	public User getLeader() {
@@ -68,6 +72,14 @@ public class Session extends Observable{
 
 	public void setSessionName(String sessionName) {
 		this.sessionName = sessionName;
+	}
+	
+	public String getSessionIP() {
+		return sessionIP;
+	}
+
+	public void setSessionIP(String sessionIP) {
+		this.sessionIP = sessionIP;
 	}
 
 }

@@ -109,7 +109,7 @@ public class Main {
 				e.printStackTrace();
 			}
 			System.out.println(user.getName() + " "+ user.getIp());
-			session = new Session(user, "AAA", sessionName);
+			//session = new Session(user, "AAA", sessionName);
 			
 			
 			
