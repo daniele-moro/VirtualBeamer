@@ -57,37 +57,17 @@ public class Main {
 				null,
 				"");	
 		
-		MulticastSocket s = null; 
-		List<String> sessionList = new ArrayList<String>();
-		int cont =0;
+		List<Temp> sessionList = null;
 		try {
-			String msg = "Hello";
-			s = new MulticastSocket(6971);
-			s.joinGroup(globalLan);
-			DatagramPacket hi = new DatagramPacket(msg.getBytes(), msg.length(), globalLan, 6971);
-			s.send(hi);
-			byte[] buf = new byte[1000];
-			DatagramPacket recv = new DatagramPacket(buf, buf.length);
-			s.setSoTimeout(10000);
-			try{
-				while(true){
-					s.receive(recv);
-					//Leggere i dati ricevuti dai vari server
-					sessionList.add( new String(recv.getData()) + recv.getAddress());
-					cont++;
-				}
-			}catch(SocketTimeoutException e2){
-				System.out.println("Exception Raised, Timeout Expired");
-			}
+			sessionList = sendHello();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-		} 
-		
-		for(String st : sessionList){
-			System.out.println(st);
 		}
-		System.out.println("Numero ricezioni: " + cont);
+		
+		for(Temp tmp : sessionList){
+			System.out.println("IP: " + tmp.ip + "NOME: "+ tmp.nome);
+		}
 		
 		switch(choice){
 		case 0: //NEW--> MASTER!!!
@@ -121,6 +101,39 @@ public class Main {
 		}
 		
 	}
+	/**
+	 * Metodo per la spedizione dell'HELLO nella rete multicast riservata a pubblicizzare le sessioni
+	 * @return ritorna la lista delle sessioni attualmente disponibili
+	 * @throws IOException
+	 */
+	static public List<Temp> sendHello() throws IOException{
+		InetAddress globalLan = InetAddress.getByName(Session.ipHello);
+		List<Temp> sessionList = new ArrayList<Temp>();
+		String msg = "HELLO";
+		MulticastSocket socket = new MulticastSocket(Session.portHello);
+		socket.joinGroup(globalLan);
+		int cont;
+		DatagramPacket hi = new DatagramPacket(msg.getBytes(), msg.length(), globalLan, Session.portHello);
+		socket.send(hi);
+		byte[] buf = new byte[1000];
+		DatagramPacket recv = new DatagramPacket(buf, buf.length);
+		socket.setSoTimeout(10000);
+		try{
+			while(true){
+				socket.receive(recv);
+				//Leggere i dati ricevuti dai vari server
+				String dataReceived = new String(recv.getData());
+				String[] splitted = dataReceived.split(",");
+				if(splitted[0]=="REPLY"){
+					sessionList.add(new Temp(splitted[1], splitted[2]));
+				}
+			}
+		}catch(SocketTimeoutException e2){
+			System.out.println("Exception Raised, Timeout Expired");
+		}
+		return sessionList;
+		
+	}
 	
 	static public String generateIp(List<String> alreadyUsedIp) {
 	    List<Integer> lastElements = new ArrayList<Integer>(); 
@@ -146,4 +159,14 @@ public class Main {
 	    }
 	    return null;
 	  }
+}
+
+class Temp{
+	String ip;
+	String nome;
+	
+	public Temp(String ip, String nome){
+		this.nome=nome;
+		this.ip=ip;
+	}
 }

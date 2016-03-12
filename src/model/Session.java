@@ -6,6 +6,8 @@ import java.util.Observable;
 
 public class Session extends Observable{
 	public final static int port = 6789;
+	public final static String ipHello ="228.0.0.1";
+	public final static int portHello = 6790;
 	
 
 	private User leader;

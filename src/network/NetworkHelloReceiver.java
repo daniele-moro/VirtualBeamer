@@ -1,9 +1,6 @@
 package network;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -11,56 +8,54 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Observable;
 
-import events.GenericEvent;
 import model.Session;
 
 /**
- * Classe che si occupa di ricevere i messaggi dal gruppo di multicast, crea un thread che rimane in ascolto sul gruppo indicato dalla sessione.
- * Il thread può essere stoppato usando il metodo stopReceiving
+ * Classe per ricevere e gestire l'HELLO ricevuto nella rete multicast dedicata alla pubblicizzazione delle sessioni diponibili
  * @author m-daniele
  *
  */
-public class NetworkReceiver {
-	
+public class NetworkHelloReceiver {
 	private Thread thReceiver;
-	private Receiver receiver;
-	
-	public NetworkReceiver(Session session) throws IOException{
+	private HelloReceiver receiver;
+
+	public NetworkHelloReceiver(Session session) throws IOException{
 		//Creazione del thread di ricezione dei messaggi dal gruppo di multicast
-		receiver = new Receiver(session.getSessionIP(), Session.port, true);
+		receiver = new HelloReceiver(Session.ipHello, Session.portHello, true, session);
 		thReceiver = new Thread(receiver);
 		thReceiver.start();
 	}
-	
+
 	public void stopReceiving(){
 		receiver.setRun(false);
 	}
 
 }
 
-class Receiver extends Observable implements Runnable{
+class HelloReceiver extends Observable implements Runnable{
 	private InetAddress group;
 	private MulticastSocket socket;
 	private boolean run;
-	
-	public Receiver(String ip, int port, boolean run) throws IOException{
+	private Session session;
+	private int port;
+
+	public HelloReceiver(String ip, int port, boolean run, Session session) throws IOException{
+		this.session = session;
 		group=InetAddress.getByName(ip);
 		socket = new MulticastSocket(port);
 		socket.joinGroup(group);
 		this.run=run;
+		this.port=port;
 	}
-	
+
 	public void setRun(boolean run){
 		this.run=run;
 	}
-	
-	
+
 	public void run(){
 		//Valutare se serve usare il timeout sul socket.receive (settando il setSoTimeout di socket)
 		byte[] buf = new byte[1000];
 		DatagramPacket recv = new DatagramPacket(buf, buf.length);
-		ByteArrayInputStream byteStream;
-		ObjectInputStream is;
 		try {
 			socket.setSoTimeout(500);
 		} catch (SocketException e1) {
@@ -71,28 +66,29 @@ class Receiver extends Observable implements Runnable{
 			try {
 				socket.receive(recv);
 				System.out.println("Port:" + recv.getPort() + "Address: " + recv.getAddress() + "SocketAddress: " + recv.getSocketAddress());
-				GenericEvent eventReceived;
-				byteStream = new ByteArrayInputStream(buf);
-				is = new ObjectInputStream(new BufferedInputStream(byteStream));
+				String dataReceived = new String(recv.getData());
 				
-				eventReceived=(GenericEvent) is.readObject();
-				
-				//TODO ora devo generare l'evento per l'observer che deve essere svegliato
-				/*... notify....*/
-				
+				if(dataReceived.equals("HELLO")){
+					//Devo rispondere alla richiesta di hello con le caratteristiche della sessione
+					String msg = "REPLY," + session.getSessionIP() +"," + session.getSessionName(); 
+					DatagramPacket send = new DatagramPacket(msg.getBytes(), msg.length(), group, port);
+					socket.send(send);
+					
+				}
+				if(dataReceived.startsWith("REPLY")){
+					//Non devo fare niente, stampo solo per debug
+					System.out.println("FROM: " + recv.getSocketAddress() + "MEX: " + dataReceived);
+				}
+
 			}catch(SocketTimeoutException e){
 				System.out.println("------ Timer della receive scaduto-----");
 			}catch (IOException e) {
 				System.out.println("ERROR: -------- errore nella ricezione del pacchetto o nell bytestream");
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (ClassNotFoundException e) {
-				System.out.println("ERROR: --------OGGETTO RICEVUTO NON è EVENTO--------");
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 
 		}
-		
+
 	}
 }
