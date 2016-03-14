@@ -6,5 +6,8 @@ public enum EventType {
 	NEWLEADER, 
 	HELLO, 
 	ANSWER, 
-	JOIN;
+	JOIN,
+	NACK,
+	ACK,
+	SLIDEPART;
 }

@@ -12,6 +12,8 @@ import java.net.SocketTimeoutException;
 import java.util.Observable;
 
 import events.GenericEvent;
+import events.SlidePart;
+import events.SlidePartData;
 import model.Session;
 
 /**
@@ -87,9 +89,35 @@ class Receiver extends Observable implements Runnable{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
-				System.out.println("ERROR: --------OGGETTO RICEVUTO NON è EVENTO--------");
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//QUI per forza stiamo ricevendo un pacchetto di immagine
+				
+				int SESSION_START = 128;
+                int SESSION_END = 64;
+                int HEADER_SIZE = 8;
+                
+                //Creo l'evento SlidePart
+                SlidePart eventSlidePart;
+                SlidePartData slice = new SlidePartData();
+				byte[] data = recv.getData();
+				
+				slice.sessionNumber = (short)(data[1] & 0xff);
+				slice.numPack = (short)(data[2] & 0xff);
+				slice.maxPacketSize = (int)((data[3] & 0xff) << 8 | (data[4] & 0xff)); // mask the sign bit
+				slice.sequenceNumber = (short)(data[5] & 0xff);
+				int size = (int)((data[6] & 0xff) << 8 | (data[7] & 0xff)); // mask the sign bit
+				slice.start=false;
+				slice.end= false;
+				if((data[0] & SESSION_START) == SESSION_START) {
+					slice.start=true;
+				}
+				if((data[0] & SESSION_END) == SESSION_END){
+					slice.end=true;
+				}
+				System.arraycopy(data, HEADER_SIZE, slice.data, 0, size);
+				eventSlidePart = new SlidePart(slice);
+				
+				//TODO Notifico il controller con l'evento eventSlidePart
+				
 			}
 
 		}

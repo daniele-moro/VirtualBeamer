@@ -1,5 +1,6 @@
 package model;
 
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
@@ -16,7 +17,8 @@ public class Session extends Observable{
 	private String actualSlide;
 	private String path;
 	private String sessionIP;
-	
+	private List<BufferedImage> slides;
+	private boolean isLeader;
 	
 
 	public Session(User leader, String path, String sessionName, String SessionIP) {
@@ -82,6 +84,26 @@ public class Session extends Observable{
 
 	public void setSessionIP(String sessionIP) {
 		this.sessionIP = sessionIP;
+	}
+
+	public List<BufferedImage> getSlides() {
+		return slides;
+	}
+
+	public void setSlides(List<BufferedImage> slides) {
+		this.slides = slides;
+	}
+
+	public boolean isLeader() {
+		return isLeader;
+	}
+
+	public void setLeader(boolean isLeader) {
+		this.isLeader = isLeader;
+	}
+	
+	public void addSlide(BufferedImage image){
+		this.slides.add(image);
 	}
 
 }
