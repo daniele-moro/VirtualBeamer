@@ -11,7 +11,17 @@ import java.util.Observable;
 import java.util.Observer;
 
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 
+import model.Session;
+import model.User;
+import network.NetworkHelloReceiver;
+import network.NetworkReceiver;
+import network.NetworkSender;
+import network.NetworkSlideSender;
 import events.Ack;
 import events.AckEvent;
 import events.GenericEvent;
@@ -20,12 +30,6 @@ import events.Nack;
 import events.NewLeader;
 import events.SlidePart;
 import events.SlidePartData;
-import model.Session;
-import model.User;
-import network.NetworkHelloReceiver;
-import network.NetworkReceiver;
-import network.NetworkSender;
-import network.NetworkSlideSender;
 
 public class Controller implements Observer{
 
@@ -100,8 +104,10 @@ public class Controller implements Observer{
 		case ACK:
 			System.out.println("ACK RICEVUTO per il pezzetto di immagine");
 			if(session.isLeader()){
+				System.out.println("ddentro ack, sono leader");
 				slideSender.setCont();
-				slideSender.notifyAll();
+				//slideSender.notifyAll();
+				
 			}
 			break;
 		case NACK:
@@ -113,7 +119,7 @@ public class Controller implements Observer{
 			//Ho ricevuto un pezzetto di immagine
 			
 			if(!session.isLeader()){
-				
+				System.out.println("entrato nell'esecuzione di slide part");
 				SlidePartData slice =((SlidePart) arg).getData();
 				
 				//se start inizializzo arraylist
@@ -125,8 +131,7 @@ public class Controller implements Observer{
 					}
 				}
 				
-				tempArray.add(slice.sequenceNumber, slice);
-				
+				tempArray.set(slice.sequenceNumber, slice);
 				if(slice.sequenceNumber-1 > 0 && tempArray.get(slice.sequenceNumber-1) == null ){
 					//Invio NACK
 					try {
@@ -155,6 +160,7 @@ public class Controller implements Observer{
 							}
 							ByteArrayInputStream bis = new ByteArrayInputStream(imageData);
 							BufferedImage image = ImageIO.read(bis);
+							System.out.println(image);
 							session.addSlide(image);
 						} catch (IOException e) {
 							// TODO Auto-generated catch block

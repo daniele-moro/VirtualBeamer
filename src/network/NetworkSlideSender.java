@@ -27,6 +27,7 @@ public class NetworkSlideSender {
 		cont=false;
 		group = InetAddress.getByName(session.getSessionIP());
 		socket = new MulticastSocket(Session.port);
+		socket.joinGroup(group);
 	}
 	
 	private void sendSlide(){
@@ -34,7 +35,6 @@ public class NetworkSlideSender {
 		try {
 			packetsList = PacketCreator.createPackets(session.getSlides().get(sessionNumber), sessionNumber);
 			
-			socket.joinGroup(group);
 			
 			for(byte[] elem : packetsList){
 				System.out.println("Invio pezzo di pacchetto\n" +  elem);
@@ -56,7 +56,8 @@ public class NetworkSlideSender {
 			while(!cont){
 				try {
 					System.out.println("Mi addormento");
-					this.wait();
+					//this.wait();
+					Thread.sleep(100);
 					System.out.println("Mi sveglio");
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
@@ -66,7 +67,7 @@ public class NetworkSlideSender {
 		}
 	}
 	
-	public synchronized void setCont(){
+	public void setCont(){
 		cont=true;
 	}
 	

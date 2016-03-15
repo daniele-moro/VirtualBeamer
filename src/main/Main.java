@@ -20,7 +20,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import com.sun.medialib.mlib.Image;
 
 import controller.Controller;
 import events.GenericEvent;
@@ -148,6 +147,7 @@ public class Main {
 					e.printStackTrace();
 				}
 			}
+			
 
 			//istanzio il controller con tutti i network handler connessi
 			controller = new Controller(session);
@@ -182,6 +182,7 @@ public class Main {
 			System.out.println("SESSIONE: " + session.getLeader().getName());
 			controller = new Controller(session);
 			session.setMyself(user);
+			session.setSlides(new ArrayList<BufferedImage>());
 			Join eventJoin = new Join(user);
 			controller.sendEvent(eventJoin);
 

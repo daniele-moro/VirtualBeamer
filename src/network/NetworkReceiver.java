@@ -110,12 +110,14 @@ class Receiver extends Observable implements Runnable{
 						slice.start=true;
 					}
 					if((data[0] & SESSION_END) == SESSION_END){
+						
 						slice.end=true;
 					}
 					System.out.println("Stampo contenuto pacchetto immagine: \n" + size);
 					slice.data = new byte[size];
 					System.arraycopy(data, HEADER_SIZE, slice.data, 0, size);
 					eventSlidePart = new SlidePart(slice);
+					
 
 					//TODO Notifico il controller con l'evento eventSlidePart
 					
