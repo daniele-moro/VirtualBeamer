@@ -1,6 +1,8 @@
 package network;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -8,6 +10,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Observable;
 
+import events.HelloReply;
 import model.Session;
 
 /**
@@ -67,21 +70,28 @@ class HelloReceiver extends Observable implements Runnable{
 				socket.receive(recv);
 				System.out.println("Port:" + recv.getPort() + "Address: " + recv.getAddress() + "SocketAddress: " + recv.getSocketAddress());
 				String dataReceived = new String(recv.getData());
+				System.out.println("DATA: " + dataReceived);
 				
-				if(dataReceived.equals("HELLO")){
-					//Devo rispondere alla richiesta di hello con le caratteristiche della sessione
-					String msg = "REPLY," + session.getSessionIP() +"," + session.getSessionName(); 
-					DatagramPacket send = new DatagramPacket(msg.getBytes(), msg.length(), group, port);
-					socket.send(send);
+				if(dataReceived.contains("hello")){
+					System.out.println("Spedisco risposta ad HELLO");
+					HelloReply eventReply = new HelloReply(session);
 					
-				}
-				if(dataReceived.startsWith("REPLY")){
+					
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					ObjectOutputStream oos = new ObjectOutputStream(baos);
+					oos.writeObject(eventReply);
+					baos.toByteArray();
+					//Creazione del pacchetto
+					DatagramPacket packetedEvent = new DatagramPacket(baos.toByteArray(), baos.toByteArray().length, group, Session.portHello);
+					socket.send(packetedEvent);
+					
+				} else {
 					//Non devo fare niente, stampo solo per debug
-					System.out.println("FROM: " + recv.getSocketAddress() + "MEX: " + dataReceived);
+					System.out.println("FROM: " + recv.getSocketAddress());
 				}
 
 			}catch(SocketTimeoutException e){
-				System.out.println("------ Timer della receive scaduto-----");
+				//System.out.println("------ Timer della receive scaduto-----");
 			}catch (IOException e) {
 				System.out.println("ERROR: -------- errore nella ricezione del pacchetto o nell bytestream");
 				// TODO Auto-generated catch block

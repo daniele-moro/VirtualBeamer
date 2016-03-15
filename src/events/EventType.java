@@ -9,5 +9,7 @@ public enum EventType {
 	JOIN,
 	NACK,
 	ACK,
-	SLIDEPART;
+	SLIDEPART,
+	HELLOREPLY,
+	ACK_EVENT;
 }

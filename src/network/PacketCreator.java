@@ -18,7 +18,7 @@ public class PacketCreator {
 	public static int DATAGRAM_MAX_SIZE = 65507 - HEADER_SIZE;
 	public static int MAX_SESSION_NUMBER = 255;
 
-	public static String OUTPUT_FORMAT = "jpg"; 
+	public static String OUTPUT_FORMAT = "jpeg"; 
 
 	public static byte[] bufferedImageToByteArray(BufferedImage image, String format) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -40,6 +40,7 @@ public class PacketCreator {
 		int packets = (int) Math.ceil(imageByteArray.length / (float)DATAGRAM_MAX_SIZE);
 		List<byte[]> packetsList = new ArrayList<byte[]>();
 		for(int i = 0; i <= packets; i++) {
+			System.out.println("Iterazione: " + i);
 			int flags = 0;
 			flags = i == 0 ? flags | SESSION_START : flags;
 			flags = (i + 1) * DATAGRAM_MAX_SIZE > imageByteArray.length ? flags | SESSION_END : flags;
@@ -58,7 +59,9 @@ public class PacketCreator {
 
 			System.arraycopy(imageByteArray, i * DATAGRAM_MAX_SIZE, data, HEADER_SIZE, size);
 			packetsList.add(data);
-			if((flags & SESSION_END) == SESSION_END) break;
+			if((flags & SESSION_END) == SESSION_END){
+				break;
+			}
 		}
 		return packetsList;
 	}

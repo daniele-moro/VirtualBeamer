@@ -17,7 +17,7 @@ public class NetworkSlideSender {
 	private boolean cont;
 
 	
-	public  NetworkSlideSender(Session session) throws IOException{
+	public NetworkSlideSender(Session session) throws IOException{
 		this.session=session;
 		//Apro la sessione per spedire le slide a tutti i nodi della rete
 		group = InetAddress.getByName(session.getSessionIP());
@@ -37,9 +37,11 @@ public class NetworkSlideSender {
 			socket.joinGroup(group);
 			
 			for(byte[] elem : packetsList){
+				System.out.println("Invio pezzo di pacchetto\n" +  elem);
 				DatagramPacket packet = new DatagramPacket(elem, elem.length, group, Session.port);
 				socket.send(packet);
 			}
+			System.out.println("Fine spedizione prima slide");
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -53,7 +55,9 @@ public class NetworkSlideSender {
 			sendSlide();
 			while(!cont){
 				try {
+					System.out.println("Mi addormento");
 					this.wait();
+					System.out.println("Mi sveglio");
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
