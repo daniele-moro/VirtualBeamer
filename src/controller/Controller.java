@@ -75,6 +75,7 @@ public class Controller implements Observer{
 		if(session.isLeader()){
 			//Se è leader devo istanziare il serverSocket
 			try {
+				networkHelloReceiver = new NetworkHelloReceiver(session);
 				nlh = new NetworkLeaderHandler(this);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -330,6 +331,7 @@ public class Controller implements Observer{
 		try {
 			//istanzio il networkHandler e invio la richiesta di Join al Leader
 			networkHandler = new NetworkHandler(session.getLeader().getIp(), this);
+			System.out.println(session.getLeader().getIp());
 			RequestToJoin rqTJ = new RequestToJoin(session.getMyself());
 			networkHandler.send(rqTJ);
 		} catch (UnknownHostException e1) {

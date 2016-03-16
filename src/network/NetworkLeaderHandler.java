@@ -65,20 +65,24 @@ class ConnectionServer extends Observable implements Runnable{
 	
 	@Override
 	public void run() {
+		System.out.println("sto per notificare observer1");
 		while(!serverSocket.isClosed()){
 			try {
+				System.out.println("sto per notificare observer2");
 				Thread.sleep(10);
 				//Attendo una nuova connessione
 				Socket newJoiner = serverSocket.accept();
 				
 				ObjectInputStream ois = new ObjectInputStream(newJoiner.getInputStream());
-				RequestToJoin event;
+				RequestToJoin event=null;
 				//Attendo il primo evento nel socket (che sarà una join)
 				while(true){
+					System.out.println("sto per notificare observer3");
 					if((event = (RequestToJoin) ois.readObject())!=null){
 						nlh.addElementToMap(event.getJoiner(), 
 								new NetworkHandler(event.getJoiner().getIp(), controller));
 						setChanged();
+						System.out.println("sto per notificare observer4");
 						notifyObservers(event);
 						break;
 					}

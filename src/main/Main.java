@@ -158,7 +158,7 @@ public class Main {
 			centralInitPanel.setBottomComponent(bottomInitPanel);
 			frameInit.add(centralInitPanel, BorderLayout.CENTER);
 			frameInit.pack();
-			frameInit.setVisible(true);
+			//frameInit.setVisible(true);
 			
 			
 			
@@ -253,11 +253,11 @@ public class Main {
 			
 			
 			
-			controller = new Controller(session);
+			
 			session.setMyself(user);
 			session.setSlides(new ArrayList<BufferedImage>());
-			Join eventJoin = new Join(user);
-			controller.sendEvent(eventJoin);
+			controller = new Controller(session);
+			controller.requestToJoin();
 
 			break;
 
