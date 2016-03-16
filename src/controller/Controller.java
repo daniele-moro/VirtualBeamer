@@ -22,12 +22,15 @@ import network.NetworkHelloReceiver;
 import network.NetworkReceiver;
 import network.NetworkSender;
 import network.NetworkSlideSender;
+import view.View;
 import events.Ack;
 import events.AckEvent;
 import events.GenericEvent;
+import events.GoTo;
 import events.Join;
 import events.Nack;
 import events.NewLeader;
+import events.RequestToJoin;
 import events.SlidePart;
 import events.SlidePartData;
 
@@ -38,6 +41,7 @@ public class Controller implements Observer{
 	private NetworkSender networkSender;
 	private NetworkReceiver networkReceiver;
 	private NetworkHelloReceiver networkHelloReceiver;
+	private View view;
 	
 	private Map<GenericEvent, List<User>> ackedEvent;
 	
@@ -55,6 +59,7 @@ public class Controller implements Observer{
 
 	public Controller(Session session) {
 		this.session = session;
+		view = new View(session); 
 		try {
 			slideSender = new NetworkSlideSender(session);
 			networkSender = new NetworkSender(session);
@@ -194,8 +199,19 @@ public class Controller implements Observer{
 				break;
 			}
 		case ANSWER:
+			break;
 		case GOTO:
+			session.setActualSlide(((GoTo)arg).getSlideToShow());
+			view.changeSlide(session.getSlides().get(((GoTo)arg).getSlideToShow()));
+			break;
 		case NEWLEADER:
+			NewLeader e = (NewLeader) arg;
+			session.setLeader(e.getNewLeader());
+			//Attivare i pulsanti
+			if(session.isLeader()){
+				view.activateButtons();
+			}
+			break;
 		case TERMINATE:
 			System.out.println("EVENTO!!! sta per uscire traffic");
 			ackedEvent.put((GenericEvent) arg, new ArrayList<User>());
@@ -238,6 +254,63 @@ public class Controller implements Observer{
 		slideSender.sendSlides();
 	}
 
+	public void prev(){
+		int actualSlide = session.getActualSlide();
+		if(actualSlide > 0 ){
+			this.goTo(actualSlide-1);
+		}
+	}
+	
+	public void next(){
+		int actualSlide = session.getActualSlide();
+		if(actualSlide < session.getSlides().size() ){
+			this.goTo(actualSlide+1);
+		}
+	}
+	
+	private void goTo(int slideToGo){
+		GoTo event = new GoTo(slideToGo);
+		try {
+			networkSender.send(event);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		session.setActualSlide(slideToGo);
+		view.changeSlide(session.getSlides().get(slideToGo));
+		
+	}
+	
+	/**
+	 * Invocato dall'utente che vuole entrare nella session
+	 */
+	public void requestToJoin(){
+		RequestToJoin rqTJ = new RequestToJoin(session.getMyself());
+		try {
+			networkSender.sendToLeader(rqTJ);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	/**
+	 * Invocato da
+	 * @param user
+	 */
+	public void newJoiner(User user){
+		Join join = new Join(user);
+		try {
+			networkSender.send(join);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		//Ora applico alla mia sessione
+		session.addJoinedUser(user);
+	}
+	
 
 
 }

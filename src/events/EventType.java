@@ -11,5 +11,6 @@ public enum EventType {
 	ACK,
 	SLIDEPART,
 	HELLOREPLY,
-	ACK_EVENT;
+	ACK_EVENT, 
+	REQUEST_TO_JOIN;
 }

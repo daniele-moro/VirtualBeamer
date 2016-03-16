@@ -41,5 +41,9 @@ public class NetworkSender {
 		//Spedizione pacchetto
 		socket.send(packetedEvent);
 	}
+	
+	public void sendToLeader(GenericEvent event) throws IOException{
+		//TODO
+	}
 
 }

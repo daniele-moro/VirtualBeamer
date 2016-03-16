@@ -132,7 +132,6 @@ public class Main {
 				listIp.add("228.0.0.0");
 			}
 			session = new Session(user,user,"",sessionName,generateIp(listIp)); //Manca da generare l'IP con il metodo sotto (a partire dalla lista di IP della altre sessioni)
-			session.setLeader(true);
 			
 			System.out.println("IP della nuova session: " + session.getSessionIP());
 			

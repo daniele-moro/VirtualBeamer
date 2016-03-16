@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 
+import events.GoTo;
+
 public class Session extends Observable implements Serializable{
 	public final static int port = 6789;
 	public final static String ipHello ="228.0.0.1";
@@ -16,11 +18,10 @@ public class Session extends Observable implements Serializable{
 	private transient User myself;
 	private String sessionName;
 	private List<User> joined;
-	private String actualSlide;
+	private int actualSlide;
 	private String path;
 	private String sessionIP;
 	private transient List<BufferedImage> slides;
-	private transient boolean isLeader;
 	
 
 	public Session(User leader, User myself, String path, String sessionName, String sessionIP) {
@@ -29,7 +30,7 @@ public class Session extends Observable implements Serializable{
 		this.setSessionName(sessionName);
 		this.joined = new ArrayList<User>();
 		joined.add(leader);
-		this.actualSlide = "-1";
+		this.actualSlide = -1;
 		this.path = path;
 		this.sessionIP=sessionIP;
 		this.slides= new ArrayList<BufferedImage>();
@@ -61,15 +62,18 @@ public class Session extends Observable implements Serializable{
 		}
 	}
 	
-	public String getActualSlide() {
+	public int getActualSlide() {
 		return actualSlide;
 	}
-	public void setActualSlide(String actualSlide) {
-		this.actualSlide = actualSlide;
+	
+	public void setActualSlide(int actualSlide) {
+		this.actualSlide = actualSlide;		
 	}
+	
 	public String getPath() {
 		return path;
 	}
+	
 	public void setPath(String path) {
 		this.path = path;
 	}
@@ -99,13 +103,9 @@ public class Session extends Observable implements Serializable{
 	}
 
 	public boolean isLeader() {
-		return isLeader;
+		return myself.equals(leader);
 	}
 
-	public void setLeader(boolean isLeader) {
-		this.isLeader = isLeader;
-	}
-	
 	public void addSlide(BufferedImage image){
 		this.slides.add(image);
 	}
