@@ -240,7 +240,26 @@ public class Controller implements Observer{
 			//Attivare i pulsanti
 			if(session.isLeader()){
 				view.activateButtons();
+				try {
+					nlh = new NetworkLeaderHandler(this);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}	
+			} else {
+				try {
+					networkHandler = new NetworkHandler(session.getLeader().getIp(), this);
+					//TODO: CREARE L'EVENTO DA INVIARE
+				} catch (UnknownHostException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
 			}
+			 
 			break;
 		case TERMINATE:
 			System.out.println("EVENTO!!! sta per uscire traffic");
@@ -320,7 +339,15 @@ public class Controller implements Observer{
 	}
 
 
-
+	public void newLeader(User user) {
+		NewLeader nl = new NewLeader(user); 
+		nlh.sendToUsers(nl);
+		session.setLeader(user);
+		nlh.closeOldSockets();
+		nlh = null;
+	}
+	
+	
 
 
 

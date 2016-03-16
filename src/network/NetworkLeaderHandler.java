@@ -50,6 +50,13 @@ public class NetworkLeaderHandler{
 			entry.getValue().send(event);
 		}
 	}
+	
+
+	public void closeOldSockets() {
+		for(Map.Entry<User, NetworkHandler> entry : networkMap.entrySet()){
+			entry.getValue().close();
+		}
+	}
 }
 
 
@@ -104,5 +111,6 @@ class ConnectionServer extends Observable implements Runnable{
 			
 		}
 	}
+	
 	
 }

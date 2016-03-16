@@ -93,6 +93,15 @@ public class NetworkHandler {
 		}
 	}
 	
+	public void close(){
+		try {
+			this.socket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 
 }
 class SingleReceiver extends Observable implements Runnable{
@@ -109,6 +118,7 @@ class SingleReceiver extends Observable implements Runnable{
 		while(true){
 			try {
 				if((event = (GenericEvent) ois.readObject()) !=null){
+					System.out.println("ricevuto un evento");
 					setChanged();
 					notifyObservers(event);
 				}
