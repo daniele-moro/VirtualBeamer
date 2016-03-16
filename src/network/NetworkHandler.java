@@ -38,13 +38,16 @@ public class NetworkHandler {
 //	}
 	
 	public NetworkHandler(String ip, Controller controller) throws UnknownHostException, IOException{
+		System.out.println("Entrato nel Costruttore del NetworkHandler");
 		socket = new Socket(ip, Session.portLeader);
 		oos  = new ObjectOutputStream(socket.getOutputStream());
 		ois  = new ObjectInputStream(socket.getInputStream());
+		System.out.println("Ho creato oos, ois");
 		
 		singleReceiver = new SingleReceiver(ois);
 		singleReceiver.addObserver(controller);
 		receiverThread = new Thread(singleReceiver);
+		System.out.println("Faccio partire il thread di ricezione");
 		receiverThread.start();
 	}
 	

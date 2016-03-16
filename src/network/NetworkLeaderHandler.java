@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
 
@@ -27,6 +28,7 @@ public class NetworkLeaderHandler{
 		thread = new Thread(connectionServer);
 		connectionServer.addObserver(controller);
 		thread.start();
+		networkMap = new HashMap<User, NetworkHandler>();
 		
 	}
 	
