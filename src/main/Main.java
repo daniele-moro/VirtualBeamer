@@ -1,5 +1,7 @@
 package main;
 
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -16,10 +18,14 @@ import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
 
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-
+import javax.swing.JPanel;
+import javax.swing.JSplitPane;
 
 import controller.Controller;
 import events.GenericEvent;
@@ -54,6 +60,12 @@ public class Main {
 
 		//CREO tutte le istanze che mi servono per far funzionare il gioco
 		JFrame frame = new JFrame();
+		JFrame frameInit = new JFrame();
+		JSplitPane centralInitPanel = new JSplitPane();
+		JLabel centralInitSlide = new JLabel();
+		ImageIcon currentInitSlide; 
+		JPanel bottomInitPanel; 
+		JButton startButton;
 
 		String[] optionsStart = {"NEW", "JOIN"};
 		int choice = JOptionPane.showOptionDialog(frame,
@@ -123,6 +135,41 @@ public class Main {
 			File[] selectedFile = fc.getSelectedFiles();
 			frame.setVisible(false);
 
+			
+			frameInit = new JFrame("Select");
+			frameInit.setLocationRelativeTo(null);
+			frameInit.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			
+			centralInitPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+			centralInitSlide = new JLabel(); 
+			currentInitSlide = new ImageIcon("src/main/leaderStart.png");
+			centralInitSlide.setIcon(currentInitSlide);
+			centralInitSlide.setVisible(true);
+			
+			bottomInitPanel = new JPanel();
+			bottomInitPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+			startButton = new JButton("START");
+			//prevSlide.setIcon(new ImageIcon(this.getClass().getResource("prev.png")));
+			startButton.setSize(250, 96);
+			bottomInitPanel.add(startButton);
+
+
+			centralInitPanel.setTopComponent(centralInitSlide);
+			centralInitPanel.setBottomComponent(bottomInitPanel);
+			frameInit.add(centralInitPanel, BorderLayout.CENTER);
+			frameInit.pack();
+			frameInit.setVisible(true);
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
 			//TODO Creazione della sessione
 			List<String> listIp = new ArrayList<String>();
 			for(Session elem : sessionList){
@@ -179,6 +226,33 @@ public class Main {
 				e.printStackTrace();
 			}
 			System.out.println("SESSIONE: " + session.getLeader().getName());
+			
+			frameInit = new JFrame("Select");
+			frameInit.setLocationRelativeTo(null);
+			frameInit.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			
+			centralInitPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+			centralInitSlide = new JLabel(); 
+			currentInitSlide = new ImageIcon("src/main/clientStart.png");
+			centralInitSlide.setIcon(currentInitSlide);
+			centralInitSlide.setVisible(true);
+			
+			bottomInitPanel = new JPanel();
+			bottomInitPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+			startButton = new JButton("START");
+			//prevSlide.setIcon(new ImageIcon(this.getClass().getResource("prev.png")));
+			startButton.setSize(250, 96);
+			bottomInitPanel.add(startButton);
+
+
+			centralInitPanel.setTopComponent(centralInitSlide);
+			centralInitPanel.setBottomComponent(bottomInitPanel);
+			frameInit.add(centralInitPanel, BorderLayout.CENTER);
+			frameInit.pack();
+			frameInit.setVisible(true);
+			
+			
+			
 			controller = new Controller(session);
 			session.setMyself(user);
 			session.setSlides(new ArrayList<BufferedImage>());

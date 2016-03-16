@@ -59,7 +59,7 @@ public class Controller implements Observer{
 
 	public Controller(Session session) {
 		this.session = session;
-		view = new View(session); 
+		view = new View(session,this); 
 		try {
 			slideSender = new NetworkSlideSender(session);
 			networkSender = new NetworkSender(session);
