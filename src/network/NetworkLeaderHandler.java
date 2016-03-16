@@ -2,6 +2,7 @@ package network;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -74,7 +75,8 @@ class ConnectionServer extends Observable implements Runnable{
 				Thread.sleep(10);
 				//Attendo una nuova connessione
 				Socket newJoiner = serverSocket.accept();
-				
+				ObjectOutputStream oos = new ObjectOutputStream(newJoiner.getOutputStream());
+				oos.flush();
 				ObjectInputStream ois = new ObjectInputStream(newJoiner.getInputStream());
 				RequestToJoin event=null;
 				//Attendo il primo evento nel socket (che sarà una join)
@@ -82,7 +84,7 @@ class ConnectionServer extends Observable implements Runnable{
 					System.out.println("sto per notificare observer3");
 					if((event = (RequestToJoin) ois.readObject())!=null){
 						nlh.addElementToMap(event.getJoiner(), 
-								new NetworkHandler(event.getJoiner().getIp(), controller));
+								new NetworkHandler(oos, ois, newJoiner, controller));
 						setChanged();
 						System.out.println("sto per notificare observer4");
 						notifyObservers(event);

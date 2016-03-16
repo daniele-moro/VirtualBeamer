@@ -141,64 +141,64 @@ public class Controller implements Observer{
 			}
 			break;
 		case SLIDEPART:
-			//Ho ricevuto un pezzetto di immagine
-
-			if(!session.isLeader()){
-				System.out.println("entrato nell'esecuzione di slide part");
-				SlidePartData slice =((SlidePart) arg).getData();
-
-				//se start inizializzo arraylist
-				if(slice.start || currentSessionNumber != slice.sessionNumber){
-					currentSessionNumber = slice.sessionNumber;
-					tempArray = new ArrayList<SlidePartData>(slice.numPack);
-					for(int i=0; i<slice.numPack; i++){
-						tempArray.add(null);
-					}
-				}
-
-				tempArray.set(slice.sequenceNumber, slice);
-				if(slice.sequenceNumber-1 > 0 && tempArray.get(slice.sequenceNumber-1) == null ){
-					//Invio NACK
-					try {
-						networkSender.send(new Nack(slice.sequenceNumber-1));
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				} else {
-					boolean endSlide=true;
-					for(SlidePartData part : tempArray){
-						if(part==null){
-							endSlide = false;
-							break;
-						}
-					}
-					if(endSlide){
-						try {
-							//Invio ACK
-							networkSender.send(new Ack(currentSessionNumber));
-
-							//Costruisco l'immagine e la aggiungo alla session
-							byte[] imageData = new byte[((tempArray.size()-1) * tempArray.get(0).maxPacketSize) + tempArray.get(tempArray.size()-1).data.length];
-							for(SlidePartData part : tempArray){
-								System.arraycopy(part.data, 0, imageData, part.sequenceNumber*part.maxPacketSize , part.data.length);
-							}
-							ByteArrayInputStream bis = new ByteArrayInputStream(imageData);
-							BufferedImage image = ImageIO.read(bis);
-							System.out.println(image);
-							session.addSlide(image);
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-				}
-			}
+//			//Ho ricevuto un pezzetto di immagine
+//
+//			if(!session.isLeader()){
+//				System.out.println("entrato nell'esecuzione di slide part");
+//				SlidePartData slice =((SlidePart) arg).getData();
+//
+//				//se start inizializzo arraylist
+//				if(slice.start || currentSessionNumber != slice.sessionNumber){
+//					currentSessionNumber = slice.sessionNumber;
+//					tempArray = new ArrayList<SlidePartData>(slice.numPack);
+//					for(int i=0; i<slice.numPack; i++){
+//						tempArray.add(null);
+//					}
+//				}
+//
+//				tempArray.set(slice.sequenceNumber, slice);
+//				if(slice.sequenceNumber-1 > 0 && tempArray.get(slice.sequenceNumber-1) == null ){
+//					//Invio NACK
+//					try {
+//						networkSender.send(new Nack(slice.sequenceNumber-1));
+//					} catch (IOException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+//				} else {
+//					boolean endSlide=true;
+//					for(SlidePartData part : tempArray){
+//						if(part==null){
+//							endSlide = false;
+//							break;
+//						}
+//					}
+//					if(endSlide){
+//						try {
+//							//Invio ACK
+//							networkSender.send(new Ack(currentSessionNumber));
+//
+//							//Costruisco l'immagine e la aggiungo alla session
+//							byte[] imageData = new byte[((tempArray.size()-1) * tempArray.get(0).maxPacketSize) + tempArray.get(tempArray.size()-1).data.length];
+//							for(SlidePartData part : tempArray){
+//								System.arraycopy(part.data, 0, imageData, part.sequenceNumber*part.maxPacketSize , part.data.length);
+//							}
+//							ByteArrayInputStream bis = new ByteArrayInputStream(imageData);
+//							BufferedImage image = ImageIO.read(bis);
+//							System.out.println(image);
+//							session.addSlide(image);
+//						} catch (IOException e) {
+//							// TODO Auto-generated catch block
+//							e.printStackTrace();
+//						}
+//					}
+//				}
+//			}
 			break;
 			
 			
 		case REQUEST_TO_JOIN:
-			//Sono nel controller
+			//Sono nel controller del leader
 			RequestToJoin rqtj = (RequestToJoin) arg;
 			//Avvisiamo tutti gli utenti che c'è stata una join
 			Join joinEv = new Join(rqtj.getJoiner());
@@ -225,6 +225,7 @@ public class Controller implements Observer{
 			break;
 		case JOIN:
 			//Sono un client e devo aggiungere un nuovo utente agli utenti della sessione
+			System.out.println("SONO NELLA JOIN, TUTTO VA BENE");
 			Join ev = (Join) arg;
 			session.addJoinedUser(ev.getJoiner());
 		case ANSWER:
