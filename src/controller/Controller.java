@@ -1,8 +1,12 @@
 package controller;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,18 +15,7 @@ import java.util.Observable;
 import java.util.Observer;
 
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
 
-import model.Session;
-import model.User;
-import network.NetworkHelloReceiver;
-import network.NetworkReceiver;
-import network.NetworkSender;
-import network.NetworkSlideSender;
-import view.View;
 import events.Ack;
 import events.AckEvent;
 import events.GenericEvent;
@@ -33,19 +26,38 @@ import events.NewLeader;
 import events.RequestToJoin;
 import events.SlidePart;
 import events.SlidePartData;
+import model.Session;
+import model.User;
+import network.NetworkHandler;
+import network.NetworkHelloReceiver;
+import network.NetworkLeaderHandler;
+import network.NetworkReceiver;
+import network.NetworkSlideSender;
+import view.View;
 
 public class Controller implements Observer{
 
 	private Session session; 
 	private NetworkSlideSender slideSender;
-	private NetworkSender networkSender;
+	
+	//Gestisce la rete per i client
+	private NetworkHandler networkHandler;
+
+	//Gestisce le richieste di connessione verso il Leader
+	private NetworkLeaderHandler nlh;
+	
+	
+	
 	private NetworkReceiver networkReceiver;
 	private NetworkHelloReceiver networkHelloReceiver;
 	private View view;
-	
+
+	//Socket e I/O sul socket bidirezionale verso/da il leader
+
+
 	private Map<GenericEvent, List<User>> ackedEvent;
-	
-	
+
+
 	private List<SlidePartData> tempArray;
 	private int currentSessionNumber=-1;
 
@@ -56,47 +68,54 @@ public class Controller implements Observer{
 	public void setSession(Session session) {
 		this.session = session;
 	}
+	
+	public Controller(Session session){
+		this.session=session;
+		this.view= new View(session, this);
+		if(session.isLeader()){
+			//Se è leader devo istanziare il serverSocket
+			try {
+				nlh = new NetworkLeaderHandler(this);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+//	public Controller(Session session) {
+//		this.session = session;
+//		view = new View(session,this); 
+//		try {
+//			slideSender = new NetworkSlideSender(session);
+//			networkSender = new NetworkHandler(session);
+//			networkReceiver = new NetworkReceiver(session, this);
+//			ackedEvent = new HashMap<GenericEvent, List<User>>();
+//			if(session.isLeader()){
+//				networkHelloReceiver = new NetworkHelloReceiver(session);
+//			}
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//	}
 
-	public Controller(Session session) {
-		this.session = session;
-		view = new View(session,this); 
-		try {
-			slideSender = new NetworkSlideSender(session);
-			networkSender = new NetworkSender(session);
-			networkReceiver = new NetworkReceiver(session, this);
-			ackedEvent = new HashMap<GenericEvent, List<User>>();
-			if(session.isLeader()){
-				networkHelloReceiver = new NetworkHelloReceiver(session);
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
-	public Controller(){
-		try {
-			slideSender = new NetworkSlideSender(session);
-			networkSender = new NetworkSender(session);
-			networkReceiver = new NetworkReceiver(session, this);
-			ackedEvent = new HashMap<GenericEvent, List<User>>();
-			if(session.isLeader()){
-				networkHelloReceiver = new NetworkHelloReceiver(session);
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
-	public void sendEvent(GenericEvent event){
-		try {
-			networkSender.send(event);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+//	public Controller(){
+//		try {
+//			slideSender = new NetworkSlideSender(session);
+//			networkSender = new NetworkHandler(session);
+//			networkReceiver = new NetworkReceiver(session, this);
+//			ackedEvent = new HashMap<GenericEvent, List<User>>();
+//			if(session.isLeader()){
+//				networkHelloReceiver = new NetworkHelloReceiver(session);
+//			}
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//	}
+
 
 	@Override
 	public void update(Observable o, Object arg) {
@@ -112,7 +131,7 @@ public class Controller implements Observer{
 				System.out.println("ddentro ack, sono leader");
 				slideSender.setCont();
 				//slideSender.notifyAll();
-				
+
 			}
 			break;
 		case NACK:
@@ -122,11 +141,11 @@ public class Controller implements Observer{
 			break;
 		case SLIDEPART:
 			//Ho ricevuto un pezzetto di immagine
-			
+
 			if(!session.isLeader()){
 				System.out.println("entrato nell'esecuzione di slide part");
 				SlidePartData slice =((SlidePart) arg).getData();
-				
+
 				//se start inizializzo arraylist
 				if(slice.start || currentSessionNumber != slice.sessionNumber){
 					currentSessionNumber = slice.sessionNumber;
@@ -135,7 +154,7 @@ public class Controller implements Observer{
 						tempArray.add(null);
 					}
 				}
-				
+
 				tempArray.set(slice.sequenceNumber, slice);
 				if(slice.sequenceNumber-1 > 0 && tempArray.get(slice.sequenceNumber-1) == null ){
 					//Invio NACK
@@ -157,7 +176,7 @@ public class Controller implements Observer{
 						try {
 							//Invio ACK
 							networkSender.send(new Ack(currentSessionNumber));
-							
+
 							//Costruisco l'immagine e la aggiungo alla session
 							byte[] imageData = new byte[((tempArray.size()-1) * tempArray.get(0).maxPacketSize) + tempArray.get(tempArray.size()-1).data.length];
 							for(SlidePartData part : tempArray){
@@ -176,6 +195,17 @@ public class Controller implements Observer{
 			}
 			break;
 			
+			
+		case REQUEST_TO_JOIN:
+			//Sono nel controller
+			RequestToJoin rqtj = (RequestToJoin) arg;
+			//Avvisiamo tutti gli utenti che c'è stata una join
+			Join joinEv = new Join(rqtj.getJoiner());
+			nlh.sendToUsers(joinEv);
+			//Aggiungiamo l'utente nel model locale
+			session.addJoinedUser(rqtj.getJoiner());
+			break;
+
 		case ACK_EVENT:
 			//Devo memorizzare tutti gli ack ricevuti e quando vengono ricevo un ack verifico se l'ho ricevuto da tutti
 			AckEvent event = (AckEvent)arg;
@@ -190,14 +220,12 @@ public class Controller implements Observer{
 				System.out.println("Sto per ESEGUIRE L'EVENTO: " + event.toString());
 				this.executeEvent(event.getEvent());
 			}
-			
+
 			break;
 		case JOIN:
+			//Sono un client e devo aggiungere un nuovo utente agli utenti della sessione
 			Join ev = (Join) arg;
-			if(session.getMyself().equals(ev.getJoiner())){
-				ackedEvent.put((GenericEvent) arg, new ArrayList<User>());
-				break;
-			}
+			session.addJoinedUser(ev.getJoiner());
 		case ANSWER:
 			break;
 		case GOTO:
@@ -215,7 +243,7 @@ public class Controller implements Observer{
 		case TERMINATE:
 			System.out.println("EVENTO!!! sta per uscire traffic");
 			ackedEvent.put((GenericEvent) arg, new ArrayList<User>());
-			this.sendAck((GenericEvent)arg,session.getMyself());
+			//this.sendAck((GenericEvent)arg,session.getMyself());
 			break;
 		case HELLO:
 			break;
@@ -225,11 +253,11 @@ public class Controller implements Observer{
 		}
 
 	}
-	
+
 	private void executeEvent(GenericEvent event) {
 		switch(((GenericEvent) event).getType()){
 		case GOTO:
-			
+
 			break;
 		case JOIN:
 			System.out.println("Aggiunto user: " + ((Join)event).getJoiner().toString());
@@ -241,13 +269,13 @@ public class Controller implements Observer{
 		case TERMINATE:
 			break;
 		}
-		
+
 	}
 
-	private void sendAck(GenericEvent arg, User user){
-		AckEvent ack = new AckEvent(arg, user);
-		sendEvent(ack);
-	}
+//	private void sendAck(GenericEvent arg, User user){
+//		AckEvent ack = new AckEvent(arg, user);
+//		sendEvent(ack);
+//	}
 
 
 	public void startSession(){
@@ -260,57 +288,59 @@ public class Controller implements Observer{
 			this.goTo(actualSlide-1);
 		}
 	}
-	
+
 	public void next(){
 		int actualSlide = session.getActualSlide();
 		if(actualSlide < session.getSlides().size() ){
 			this.goTo(actualSlide+1);
 		}
 	}
-	
+
 	private void goTo(int slideToGo){
 		GoTo event = new GoTo(slideToGo);
-		try {
-			networkSender.send(event);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		nlh.sendToUsers(event);
 		session.setActualSlide(slideToGo);
 		view.changeSlide(session.getSlides().get(slideToGo));
-		
+
 	}
-	
+
+
+
 	/**
-	 * Invocato dall'utente che vuole entrare nella session
-	 */
-	public void requestToJoin(){
-		RequestToJoin rqTJ = new RequestToJoin(session.getMyself());
-		try {
-			networkSender.sendToLeader(rqTJ);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-	}
-	
-	/**
-	 * Invocato da
+	 * Invocato dal leader, per avvisare tutti che c'è stata una Join di un utente
 	 * @param user
 	 */
 	public void newJoiner(User user){
 		Join join = new Join(user);
-		try {
-			networkSender.send(join);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		nlh.sendToUsers(join);
 		//Ora applico alla mia sessione
 		session.addJoinedUser(user);
 	}
-	
+
+
+
+
+
+
+
+	/**
+	 * Invocato dall'utente che vuole entrare nella session, istanzia il networkHandler e invia l'evento di Join
+	 */
+	public void requestToJoin(){
+		try {
+			//istanzio il networkHandler e invio la richiesta di Join al Leader
+			networkHandler = new NetworkHandler(session.getLeader().getIp(), this);
+			RequestToJoin rqTJ = new RequestToJoin(session.getMyself());
+			networkHandler.send(rqTJ);
+		} catch (UnknownHostException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+	}
 
 
 }

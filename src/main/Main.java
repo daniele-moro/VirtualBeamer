@@ -225,7 +225,7 @@ public class Main {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			System.out.println("SESSIONE: " + session.getLeader().getName());
+			System.out.println("Session Leader: " + session.getLeader().getName());
 			
 			frameInit = new JFrame("Select");
 			frameInit.setLocationRelativeTo(null);
