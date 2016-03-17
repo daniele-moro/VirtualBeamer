@@ -9,6 +9,9 @@ import java.util.Observable;
 import events.GoTo;
 
 public class Session extends Observable implements Serializable{
+
+	
+	private static final long serialVersionUID = 1L;
 	public final static int port = 6789;
 	public final static String ipHello ="228.0.0.1";
 	public final static int portHello = 6790;
@@ -16,6 +19,8 @@ public class Session extends Observable implements Serializable{
 	
 
 	private User leader;
+	private User sessionCreator;
+
 	private transient User myself;
 	private String sessionName;
 	private List<User> joined;
@@ -25,7 +30,8 @@ public class Session extends Observable implements Serializable{
 	private transient List<BufferedImage> slides;
 	
 
-	public Session(User leader, User myself, String path, String sessionName, String sessionIP) {
+	public Session(User leader, User sessionCreator, User myself, String path, String sessionName, String sessionIP) {
+		this.sessionCreator=sessionCreator;
 		this.myself=myself;
 		this.leader = leader;
 		this.setSessionName(sessionName);
@@ -106,6 +112,10 @@ public class Session extends Observable implements Serializable{
 	public boolean isLeader() {
 		return myself.equals(leader);
 	}
+	
+	public boolean isSessionCreator(){
+		return myself.equals(sessionCreator);
+	}
 
 	public void addSlide(BufferedImage image){
 		this.slides.add(image);
@@ -117,6 +127,14 @@ public class Session extends Observable implements Serializable{
 	
 	public User getMyself(){
 		return this.myself;
+	}
+	
+	public User getSessionCreator() {
+		return sessionCreator;
+	}
+
+	public void setSessionCreator(User sessionCreator) {
+		this.sessionCreator = sessionCreator;
 	}
 
 }

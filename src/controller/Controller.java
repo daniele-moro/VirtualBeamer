@@ -202,9 +202,12 @@ public class Controller implements Observer{
 			RequestToJoin rqtj = (RequestToJoin) arg;
 			//Avvisiamo tutti gli utenti che c'è stata una join
 			Join joinEv = new Join(rqtj.getJoiner());
-			nlh.sendToUsers(joinEv);
-			//Aggiungiamo l'utente nel model locale
-			session.addJoinedUser(rqtj.getJoiner());
+			//Se l'utente che deve accedere è un nuovo utente lo aggiunto, altrimenti siamo nel cambio leader
+			if(!session.getJoined().contains(rqtj.getJoiner())){
+				nlh.sendToUsers(joinEv);
+				//Aggiungiamo l'utente nel model locale
+				session.addJoinedUser(rqtj.getJoiner());
+			}
 			break;
 
 		case ACK_EVENT:
@@ -240,6 +243,7 @@ public class Controller implements Observer{
 			//Attivare i pulsanti
 			if(session.isLeader()){
 				view.activateButtons();
+				//ora devo inizializzare tutti i socket che verranno aperti dagli altri client
 				try {
 					nlh = new NetworkLeaderHandler(this);
 				} catch (IOException e1) {
@@ -247,9 +251,12 @@ public class Controller implements Observer{
 					e1.printStackTrace();
 				}	
 			} else {
+				//Non sono io il nuovo leader, ma sono un semplice client che
+				//deve aprire il socket verso il nuovo leader
 				try {
 					networkHandler = new NetworkHandler(session.getLeader().getIp(), this);
-					//TODO: CREARE L'EVENTO DA INVIARE
+					RequestToJoin reqTJ = new RequestToJoin(session.getMyself());
+					networkHandler.send(reqTJ);
 				} catch (UnknownHostException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -262,7 +269,7 @@ public class Controller implements Observer{
 			 
 			break;
 		case TERMINATE:
-			System.out.println("EVENTO!!! sta per uscire traffic");
+			System.out.println("EVENTO!!! è uscita traffic");
 			ackedEvent.put((GenericEvent) arg, new ArrayList<User>());
 			//this.sendAck((GenericEvent)arg,session.getMyself());
 			break;
@@ -345,6 +352,16 @@ public class Controller implements Observer{
 		session.setLeader(user);
 		nlh.closeOldSockets();
 		nlh = null;
+		//Ora non sono più leader, devo aprire un socket verso il New Leader
+		try {
+			networkHandler = new NetworkHandler(user.getIp(), this);
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	

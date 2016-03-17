@@ -18,6 +18,10 @@ public class View {
 		
 	}
 
+	/**
+	 * Cambia la slide nella GUI, la slide da visalizzare viene passata come parametro
+	 * @param slideToShow
+	 */
 	public void changeSlide(BufferedImage slideToShow) {
 		//TODO: display new slide
 	}
@@ -105,3 +109,5 @@ public class View {
 //	}
 
 }
+
+
