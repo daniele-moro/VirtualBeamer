@@ -24,12 +24,18 @@ public class NetworkLeaderHandler{
 	private ConnectionServer connectionServer;
 	private Thread thread;
 	
-	public NetworkLeaderHandler(Controller controller) throws IOException{
-		connectionServer = new ConnectionServer(this, controller);
-		thread = new Thread(connectionServer);
-		connectionServer.addObserver(controller);
-		thread.start();
-		networkMap = new HashMap<User, NetworkHandler>();
+	public NetworkLeaderHandler(Controller controller){
+		try {
+			connectionServer = new ConnectionServer(this, controller);
+			thread = new Thread(connectionServer);
+			connectionServer.addObserver(controller);
+			thread.start();
+			networkMap = new HashMap<User, NetworkHandler>();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		
 	}
 	
@@ -56,6 +62,11 @@ public class NetworkLeaderHandler{
 		for(Map.Entry<User, NetworkHandler> entry : networkMap.entrySet()){
 			entry.getValue().close();
 		}
+	}
+	
+	public void removeSocket(User user){
+		networkMap.get(user).close();
+		networkMap.remove(user);
 	}
 }
 
