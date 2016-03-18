@@ -1,22 +1,22 @@
 package events;
 
+import model.User;
+
 public class Ack extends GenericEvent {
 	
 	private static final long serialVersionUID = 1L;
 
-	private int sessionNumber;
+	private User user;
+
 	
-	public Ack(int sessionNumber) {
+	public Ack(User user) {
 		super(EventType.ACK);
-		this.setSessionNumber(sessionNumber);
+		this.user=user;
+	}
+	
+	public User getUser(){
+		return user;
 	}
 
-	public int getSessionNumber() {
-		return sessionNumber;
-	}
-
-	public void setSessionNumber(int sessionNumber) {
-		this.sessionNumber = sessionNumber;
-	}
-
+	
 }

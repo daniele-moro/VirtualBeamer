@@ -105,6 +105,7 @@ public class NetworkHandler {
 	public void close(){
 		try {
 			this.socket.close();
+			singleReceiver.terminate();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -115,16 +116,22 @@ public class NetworkHandler {
 }
 class SingleReceiver extends Observable implements Runnable{
 	private ObjectInputStream ois;
+	private boolean terminate;
 	
 	public SingleReceiver(ObjectInputStream ois){
 		super();
 		this.ois=ois;
+		terminate=false;
+	}
+	
+	public void terminate(){
+		terminate=true;
 	}
 
 	@Override
 	public void run() {
 		GenericEvent event = null;
-		while(true){
+		while(!terminate){
 			try {
 				if((event = (GenericEvent) ois.readObject()) !=null){
 					System.out.println("ricevuto un evento");

@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
@@ -62,6 +63,7 @@ public class NetworkLeaderHandler{
 		for(Map.Entry<User, NetworkHandler> entry : networkMap.entrySet()){
 			entry.getValue().close();
 		}
+		connectionServer.terminate();
 	}
 	
 	public void removeSocket(User user){
@@ -82,6 +84,15 @@ class ConnectionServer extends Observable implements Runnable{
 		this.nlh=nlh;
 		serverSocket = new ServerSocket(Session.portLeader);
 		this.controller=controller;
+	}
+	
+	public void terminate(){
+		try {
+			serverSocket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -119,7 +130,6 @@ class ConnectionServer extends Observable implements Runnable{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
 		}
 	}
 	

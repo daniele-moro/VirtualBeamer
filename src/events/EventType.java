@@ -17,5 +17,6 @@ public enum EventType {
 	ALIVE, 
 	ELECT, 
 	STOP, 
-	COORDINATOR;
+	COORDINATOR,
+	END_SLIDES;
 }
