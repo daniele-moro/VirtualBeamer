@@ -17,9 +17,9 @@ import java.util.Observer;
 import javax.imageio.ImageIO;
 
 import events.*;
-import events.SlidePartData;
 import model.Session;
 import model.User;
+import network.CrashDetector;
 import network.NetworkHandler;
 import network.NetworkHelloReceiver;
 import network.NetworkLeaderHandler;
@@ -31,6 +31,8 @@ public class Controller implements Observer{
 
 	private Session session; 
 	private NetworkSlideSender slideSender;
+	
+	private CrashDetector crashDetector; 
 
 	//Gestisce la rete per i client
 	private NetworkHandler networkHandler;
@@ -64,6 +66,7 @@ public class Controller implements Observer{
 	public Controller(Session session){
 		this.session=session;
 		this.view= new View(session, this);
+		this.crashDetector = new CrashDetector(session, this);
 		if(session.isLeader()){
 			//Se è leader devo istanziare il serverSocket
 			try {
@@ -199,6 +202,7 @@ public class Controller implements Observer{
 				nlh.sendToUsers(joinEv);
 				//Aggiungiamo l'utente nel model locale
 				session.addJoinedUser(rqtj.getJoiner());
+				crashDetector.addUser(rqtj.getJoiner());
 			}
 			break;
 
@@ -214,7 +218,7 @@ public class Controller implements Observer{
 				//Tutti gli utenti hanno inviato l'ack dell'evento event
 				//Posso eseguire realmente l'evento
 				System.out.println("Sto per ESEGUIRE L'EVENTO: " + event.toString());
-				this.executeEvent(event.getEvent());
+				//this.executeEvent(event.getEvent());
 			}
 
 			break;
@@ -223,6 +227,7 @@ public class Controller implements Observer{
 			System.out.println("SONO NELLA JOIN, TUTTO VA BENE");
 			Join ev = (Join) arg;
 			session.addJoinedUser(ev.getJoiner());
+			crashDetector.addUser(ev.getJoiner());
 		case ANSWER:
 			break;
 		case GOTO:
@@ -308,23 +313,23 @@ public class Controller implements Observer{
 
 	}
 
-	private void executeEvent(GenericEvent event) {
-		switch(((GenericEvent) event).getType()){
-		case GOTO:
-
-			break;
-		case JOIN:
-			System.out.println("Aggiunto user: " + ((Join)event).getJoiner().toString());
-			session.addJoinedUser(((Join) event).getJoiner());
-			break;
-		case NEWLEADER:
-			session.setLeader(((NewLeader) event).getNewLeader());
-			break;
-		case TERMINATE:
-			break;
-		}
-
-	}
+//	private void executeEvent(GenericEvent event) {
+//		switch(((GenericEvent) event).getType()){
+//		case GOTO:
+//
+//			break;
+//		case JOIN:
+//			System.out.println("Aggiunto user: " + ((Join)event).getJoiner().toString());
+//			session.addJoinedUser(((Join) event).getJoiner());
+//			break;
+//		case NEWLEADER:
+//			session.setLeader(((NewLeader) event).getNewLeader());
+//			break;
+//		case TERMINATE:
+//			break;
+//		}
+//
+//	}
 
 	//	private void sendAck(GenericEvent arg, User user){
 	//		AckEvent ack = new AckEvent(arg, user);
@@ -369,7 +374,8 @@ public class Controller implements Observer{
 		nlh.sendToUsers(join);
 		//Ora applico alla mia sessione
 		session.addJoinedUser(user);
-	}
+		crashDetector.addUser(user);
+		}
 
 
 	public void newLeader(User user) {
@@ -392,7 +398,7 @@ public class Controller implements Observer{
 	}
 
 	public void leaderElection() {
-		
+		crashDetector.startElect();
 	}
 
 

@@ -14,5 +14,8 @@ public enum EventType {
 	ACK_EVENT, 
 	REQUEST_TO_JOIN, 
 	CRASH, 
-	ALIVE;
+	ALIVE, 
+	ELECT, 
+	STOP, 
+	COORDINATOR;
 }

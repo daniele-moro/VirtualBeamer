@@ -113,7 +113,7 @@ public class Main {
 					"");
 
 			try {
-				user = new User(userName, InetAddress.getLocalHost().getHostAddress(), "0");
+				user = new User(userName, InetAddress.getLocalHost().getHostAddress(), 0);
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -220,7 +220,7 @@ public class Main {
 			System.out.println("Elemento Selezionato:" + elem);
 			session = sessionList.get(elem-1);
 			try {
-				user = new User(userName, InetAddress.getLocalHost().getHostAddress(), "0");
+				user = new User(userName, InetAddress.getLocalHost().getHostAddress(), 0);
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
