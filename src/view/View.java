@@ -1,39 +1,88 @@
 package view;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+
 import controller.Controller;
 import model.Session;
+import model.User;
 
 public class View {
 
 	private Session session;
 	private Controller controller;
+	private Gui gui;
+	private Icon changeSlide;
+	private boolean sessionStarted = false;
 	
 	public View(Session session, Controller controller){
 		this.session=session;
 		this.controller = controller;
 		
 	}
+	
+	public View(Session session, Controller controller, Gui gui){
+		this.session=session;
+		this.controller = controller;
+		this.gui = gui;
+	}
 
-	/**
-	 * Cambia la slide nella GUI, la slide da visalizzare viene passata come parametro
-	 * @param slideToShow
-	 */
-	public void changeSlide(BufferedImage slideToShow) {
-		//TODO: display new slide
+
+	public View(Session s, User u){
+		this.session = s;
+		this.session.setMyself(u);
+		this.controller = new Controller(this.session);
+		session.setSlides(new ArrayList<BufferedImage>());
+		controller.requestToJoin();
+		initGui();
 	}
-	
-	public void activateButtons(){
-		//TODO: attivare i bottoni per prev/next e selezione new Leader
-	}
-	
-	
+
+
 	public void initGui(){
-		
+		//TODO: when we first initialize the GUI, a start/wait slide appears
+		gui = new Gui();
+		gui.clientFrame();
 	}
+
+	public void changeSlide(BufferedImage slideToShow) {
+		//display new slide, can be the next one or the previous one
+
+		changeSlide = new ImageIcon(slideToShow);
+		gui.ChangeSlide(changeSlide);
+		if(!sessionStarted) {
+			sessionStarted = true; 
+			gui.presentationButtons();
+		}
+		
+
+		//TODO: add column with user lists
+
+
+	}
+	
+	public void displayUsers(List<User> users) {
+		//when a user joins the session, the master view is updated
+		gui.refreshUsers(users);
+	}
+
+	public void becomeMaster(){
+		gui.clientToLeader();
+		//TODO: when invoked by the controller, change the GUI such that user becomes a master
+		//button NEXT and PREV appear and also users list with possibility to select new master
+	}
+	
+	public void becomeClient(){
+		gui.leaderToClient();
+	}
+
+	
+	
 	
 
 //	//Ogni socket è "collegato" ad un utente della sessione

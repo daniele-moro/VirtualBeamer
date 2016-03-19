@@ -25,6 +25,7 @@ import network.NetworkHelloReceiver;
 import network.NetworkLeaderHandler;
 import network.NetworkReceiver;
 import network.NetworkSlideSender;
+import view.Gui;
 import view.View;
 
 public class Controller implements Observer{
@@ -67,6 +68,23 @@ public class Controller implements Observer{
 		this.session=session;
 		this.view= new View(session, this);
 		this.crashDetector = new CrashDetector(session, this);
+		if(session.isLeader()){
+			//Se è leader devo istanziare il serverSocket
+			try {
+				networkHelloReceiver = new NetworkHelloReceiver(session);
+				nlh = new NetworkLeaderHandler(this);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+	}
+	
+	
+	public Controller(Session session, Gui gui){
+		this.session=session;
+		this.view= new View(session, this, gui);
 		if(session.isLeader()){
 			//Se è leader devo istanziare il serverSocket
 			try {
@@ -239,7 +257,7 @@ public class Controller implements Observer{
 			session.setLeader(e.getNewLeader());
 			//Attivare i pulsanti
 			if(session.isLeader()){
-				view.activateButtons();
+				view.becomeMaster();
 				//ora devo inizializzare tutti i socket che verranno aperti dagli altri client
 
 				nlh = new NetworkLeaderHandler(this);
@@ -265,7 +283,7 @@ public class Controller implements Observer{
 					networkHandler.close();
 					networkHandler = null; 
 					nlh = new NetworkLeaderHandler(this);
-					view.activateButtons();
+					view.becomeMaster();
 
 				} else {
 					//crash non del leader e io sono session creator

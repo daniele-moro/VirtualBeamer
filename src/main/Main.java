@@ -1,7 +1,10 @@
 package main;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -18,6 +21,7 @@ import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
 
 import javax.imageio.ImageIO;
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -36,7 +40,8 @@ import model.User;
 import network.NetworkHelloReceiver;
 import network.NetworkReceiver;
 import view.Gui;
-import view.OpenFile;
+import view.SessionButton;
+import view.View;
 
 public class Main {
 
@@ -60,12 +65,10 @@ public class Main {
 
 		//CREO tutte le istanze che mi servono per far funzionare il gioco
 		JFrame frame = new JFrame();
-		JFrame frameInit = new JFrame();
-		JSplitPane centralInitPanel = new JSplitPane();
-		JLabel centralInitSlide = new JLabel();
-		ImageIcon currentInitSlide; 
-		JPanel bottomInitPanel; 
-		JButton startButton;
+		JFrame sessionsFrame;
+		JPanel sessionsPanel;
+		//JButton selectSession;
+		SessionButton selectSession;
 
 		String[] optionsStart = {"NEW", "JOIN"};
 		int choice = JOptionPane.showOptionDialog(frame,
@@ -136,40 +139,6 @@ public class Main {
 			frame.setVisible(false);
 
 			
-			frameInit = new JFrame("Select");
-			frameInit.setLocationRelativeTo(null);
-			frameInit.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			
-			centralInitPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-			centralInitSlide = new JLabel(); 
-			currentInitSlide = new ImageIcon("src/main/leaderStart.png");
-			centralInitSlide.setIcon(currentInitSlide);
-			centralInitSlide.setVisible(true);
-			
-			bottomInitPanel = new JPanel();
-			bottomInitPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-			startButton = new JButton("START");
-			//prevSlide.setIcon(new ImageIcon(this.getClass().getResource("prev.png")));
-			startButton.setSize(250, 96);
-			bottomInitPanel.add(startButton);
-
-
-			centralInitPanel.setTopComponent(centralInitSlide);
-			centralInitPanel.setBottomComponent(bottomInitPanel);
-			frameInit.add(centralInitPanel, BorderLayout.CENTER);
-			frameInit.pack();
-			//frameInit.setVisible(true);
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
 			//TODO Creazione della sessione
 			List<String> listIp = new ArrayList<String>();
 			for(Session elem : sessionList){
@@ -196,7 +165,10 @@ public class Main {
 			
 
 			//istanzio il controller con tutti i network handler connessi
-			controller = new Controller(session);
+			Gui masterGui = new Gui();
+			controller = new Controller(session, masterGui);
+			masterGui.setController(controller);
+			masterGui.masterFrame();
 			
 			try {
 				System.in.read();
@@ -207,57 +179,80 @@ public class Main {
 			}
 			
 			break;
+			
 		case 1: //JOIN--> CLIENT!!!
-			//controller = new Controller();
-			System.out.println("Seleziona una sessione a cui fare la JOIN: ");
-			int elem=0;
-			try {
-				elem= System.in.read() -48;
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			System.out.println("Dimension: " + sessionList.size());
+			sessionsFrame = new JFrame("Select Session");
+			sessionsFrame.setLayout(new BorderLayout());
+			sessionsFrame.setLocationRelativeTo(null);
+			sessionsPanel = new JPanel();
+			sessionsPanel.setLayout(new BoxLayout(sessionsPanel, BoxLayout.Y_AXIS));
+			sessionsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+			selectSessionHandler selectHandler = new selectSessionHandler(sessionList, userName, sessionsFrame);
+			
+			for(Session elem: sessionList){
+				System.out.println("Name of the session: " + elem.getSessionName());
+				selectSession = new SessionButton(elem, elem.getSessionName());
+				selectSession.setSize(200, 100);
+				selectSession.addActionListener(selectHandler);
+				sessionsPanel.add(selectSession);
 			}
-			System.out.println("Elemento Selezionato:" + elem);
-			session = sessionList.get(elem-1);
-			try {
-				user = new User(userName, InetAddress.getLocalHost().getHostAddress(), 0);
-			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			System.out.println("Session Leader: " + session.getLeader().getName());
 			
-			frameInit = new JFrame("Select");
-			frameInit.setLocationRelativeTo(null);
-			frameInit.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			sessionsFrame.add(sessionsPanel, BorderLayout.CENTER);
+			sessionsFrame.setVisible(true);
+			//sessionsFrame.pack();
+			sessionsFrame.setSize(600, 600);
+			sessionsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			
-			centralInitPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-			centralInitSlide = new JLabel(); 
-			currentInitSlide = new ImageIcon("src/main/clientStart.png");
-			centralInitSlide.setIcon(currentInitSlide);
-			centralInitSlide.setVisible(true);
-			
-			bottomInitPanel = new JPanel();
-			bottomInitPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-			startButton = new JButton("START");
-			//prevSlide.setIcon(new ImageIcon(this.getClass().getResource("prev.png")));
-			startButton.setSize(250, 96);
-			bottomInitPanel.add(startButton);
-
-
-			centralInitPanel.setTopComponent(centralInitSlide);
-			centralInitPanel.setBottomComponent(bottomInitPanel);
-			frameInit.add(centralInitPanel, BorderLayout.CENTER);
-			frameInit.pack();
-			frameInit.setVisible(true);
-			
-			
-			
-			
-			session.setMyself(user);
-			session.setSlides(new ArrayList<BufferedImage>());
-			controller = new Controller(session);
-			controller.requestToJoin();
+//			System.out.println("Seleziona una sessione a cui fare la JOIN: ");
+//			int elem=0;
+//			try {
+//				elem= System.in.read() -48;
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//			System.out.println("Elemento Selezionato:" + elem);
+//			session = sessionList.get(elem-1);
+//			try {
+//				user = new User(userName, InetAddress.getLocalHost().getHostAddress(), 0);
+//			} catch (UnknownHostException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//			System.out.println("Session Leader: " + session.getLeader().getName());
+//			
+//			frameInit = new JFrame("Select");
+//			frameInit.setLocationRelativeTo(null);
+//			frameInit.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//			
+//			centralInitPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+//			centralInitSlide = new JLabel(); 
+//			currentInitSlide = new ImageIcon("src/main/clientStart.png");
+//			centralInitSlide.setIcon(currentInitSlide);
+//			centralInitSlide.setVisible(true);
+//			
+//			bottomInitPanel = new JPanel();
+//			bottomInitPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+//			startButton = new JButton("START");
+//			//prevSlide.setIcon(new ImageIcon(this.getClass().getResource("prev.png")));
+//			startButton.setSize(250, 96);
+//			bottomInitPanel.add(startButton);
+//
+//
+//			centralInitPanel.setTopComponent(centralInitSlide);
+//			centralInitPanel.setBottomComponent(bottomInitPanel);
+//			frameInit.add(centralInitPanel, BorderLayout.CENTER);
+//			frameInit.pack();
+//			frameInit.setVisible(true);
+//			
+//			
+//			
+//			
+//			session.setMyself(user);
+//			session.setSlides(new ArrayList<BufferedImage>());
+//			controller = new Controller(session);
+//			controller.requestToJoin();
 
 			break;
 
@@ -332,3 +327,39 @@ public class Main {
 		return null;
 	}
 }
+
+class selectSessionHandler implements ActionListener
+{
+	private List<Session> sessionList;
+	private String userName; 
+	private User user;
+	private JFrame frame;
+	
+	public selectSessionHandler(List<Session> sessionList, String userName, JFrame frame){
+		this.sessionList = sessionList;
+		this.userName = userName;
+		this.frame = frame; 
+		
+	}
+	
+	public void actionPerformed(ActionEvent event)
+	{
+		SessionButton button = (SessionButton) event.getSource();
+		System.out.println("I've selected session: " + button.getButtonName());
+		//pass to SESSION which is the actual session selected
+		Session session = button.getButtonSession();
+		
+		try {
+			user = new User(userName, InetAddress.getLocalHost().getHostAddress(), 0);
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("SESSIONE: " + session.getLeader().getName());
+		System.out.println("I'm user:" + user.getName());
+		View view = new View(session, user);
+		frame.dispose();
+
+		
+	}
+}//End of class selectSessionHandler
