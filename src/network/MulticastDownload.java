@@ -21,16 +21,18 @@ import java.util.Observable;
 
 import javax.imageio.ImageIO;
 
-import controller.Controller;
 import events.Ack;
-import events.EndSlides;
 import events.GenericEvent;
 import events.Nack;
-import events.SlidePart;
 import events.SlidePartData;
 import model.Session;
 import model.User;
 
+/**
+ * Classe per spedire e ricevere le slide in multicast
+ * @author m-daniele
+ *
+ */
 public class MulticastDownload {
 
 	private InetAddress group;
@@ -40,63 +42,86 @@ public class MulticastDownload {
 	private Map<Integer, Map<Byte, byte[]>> sentPacket;
 	Session session;
 	List<User> ackedUsers;
-
-
+	private int numSlide;
 
 	private Receiverr receiverr; 
 
 	private boolean sentAll;
 
-	public MulticastDownload(Session session, int numslide){
-		sentAll=false;
-		sentPacket = new HashMap<Integer, Map<Byte, byte[]>>();
-
-		sessionNumber=0;
+	public MulticastDownload(Session session, int numslide, boolean sender){
+		this.sentAll=false;
+		this.sentPacket = new HashMap<Integer, Map<Byte, byte[]>>();
+		this.numSlide=numslide;
+		this.sessionNumber=0;
 		this.session=session;
 		this.ackedUsers=new ArrayList<User>();
+
 		//genero il thread per ricevere i pacchetti (ACK, NACK, Parti di slide)
-		Thread t = new Thread();
+		receiverr = new Receiverr(group,socket,sender, this);
+		Thread t = new Thread(receiverr);
+		t.start();
 
 	}
 
 
-	public void sendEnd(){
-		//invio l'evento di fine trasmissione slide in mutlicast
-		EndSlides end = new EndSlides();
-		receiverr.sendEvent(end);
-		while(!sentAll){
-			try {
-				this.wait();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
+	//	public void sendEnd(){
+	//		//invio l'evento di fine trasmissione slide in mutlicast
+	//		EndSlides end = new EndSlides();
+	//		receiverr.sendEvent(end);
+	//		while(!sentAll){
+	//			try {
+	//				this.wait();
+	//			} catch (InterruptedException e) {
+	//				// TODO Auto-generated catch block
+	//				e.printStackTrace();
+	//			}
+	//		}
+	//	}
+
+
 
 	/**
-	 * Metodo per spedire un messaggio UDP nel gruppo di multicast
-	 * @param packet
+	 * Metodo per spedire le immagini in multicast
+	 * @param bufferedImage
+	 * @return True: la slide è stat spedita, False: la slide non è stata spedita perchè sono già state spedite tutte oppure perchè c'è stato un errore
 	 */
-	private void sendSlide(BufferedImage bufferedImage, int sessionNumber){
+	public boolean sendSlide(BufferedImage bufferedImage){
 		List<byte[]> packets;
-		try {
-			packets = PacketCreator.createPackets(bufferedImage, sessionNumber);
-			if(!sentPacket.containsKey(sessionNumber)){
-				sentPacket.put(sessionNumber, new HashMap<Byte, byte[]>());
-			}
-			for(byte[] elem: packets) {
-
-				DatagramPacket  dPacket = new DatagramPacket(elem, elem.length, group, Session.port);
-				synchronized(sentPacket){
-					socket.send(dPacket);
+		if(numSlide>0){
+			try {
+				packets = PacketCreator.createPackets(bufferedImage, sessionNumber);
+				if(!sentPacket.containsKey(sessionNumber)){
+					sentPacket.put(sessionNumber, new HashMap<Byte, byte[]>());
 				}
-				sentPacket.get(sessionNumber).put(elem[5], elem);
+				for(byte[] elem: packets) {
+
+					DatagramPacket  dPacket = new DatagramPacket(elem, elem.length, group, Session.port);
+					synchronized(sentPacket){
+						socket.send(dPacket);
+					}
+					sentPacket.get(sessionNumber).put(elem[5], elem);
+				}
+				sessionNumber++;
+				numSlide--;
+				if(numSlide==0){
+					//Ho finito di inviare le Slide, mi blocco e attendo di ricevere tutti gli ack
+					while(!sentAll){
+						try {
+							this.wait();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+					return false;
+				}
+				return true;
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
 			}
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
 		}
+		return false;
 	}
 
 	void sendPacket(short sessionNumber, short sequenceNumber){
@@ -118,17 +143,27 @@ public class MulticastDownload {
 	 * @return
 	 */
 	public synchronized BufferedImage receive(){
-
-		img=null;
-		try {
-			while(img==null) {
-				this.wait();
+		if(numSlide>0){
+			img=null;
+			try {
+				while(img==null) {
+					this.wait();
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			numSlide--;
+			if(numSlide==0){
+				//Ho finito di ricevere le immagini, mando l'ACK
+				Ack evAck = new Ack(session.getMyself());
+				receiverr.sendEvent(evAck);
+				//Stoppo il thread in ricezione
+				receiverr.setRun(false);
+			}
+			return img;
+		}else {
+			return null;
 		}
-		return img;
 
 	}
 
@@ -155,11 +190,11 @@ class Receiverr extends Observable implements Runnable{
 
 	private Map<Short,  List<SlidePartData>> receivedPacket;
 
-	public Receiverr(InetAddress group, MulticastSocket socket, boolean sender, MulticastDownload md) throws IOException{
+	public Receiverr(InetAddress group, MulticastSocket socket, boolean sender, MulticastDownload md){
 		this.group=group;
 		this.socket = socket;
-		receivedPacket = new HashMap<Short, List<SlidePartData>>();
-		sender = sender;
+		this.receivedPacket = new HashMap<Short, List<SlidePartData>>();
+		this.sender = sender;
 		this.md=md;
 	}
 
@@ -228,71 +263,69 @@ class Receiverr extends Observable implements Runnable{
 							md.notifyAll();
 						}
 					}
-					if(eventReceived instanceof EndSlides && !sender){
-						//devo spedire l'ACK
-						Ack evAck = new Ack(md.session.getMyself());
-						sendEvent(evAck);
-					}
 
 				}catch(StreamCorruptedException exc){
-					//Qui forse stiamo ricevendo l'immagine
-					System.out.println("Qui forse stiamo ricevendo l'immagine");
-					int SESSION_START = 128;
-					int SESSION_END = 64;
-					int HEADER_SIZE = 8;
+					if(!sender){
+						//Le immagini mi interessano solo se non sono il sender
+						//Qui forse stiamo ricevendo l'immagine
+						System.out.println("Qui forse stiamo ricevendo l'immagine");
+						int SESSION_START = 128;
+						int SESSION_END = 64;
+						int HEADER_SIZE = 8;
 
 
-					//Creo l'evento SlidePart
-					SlidePartData slice = new SlidePartData();
-					byte[] data = recv.getData();
+						//Creo l'evento SlidePart
+						SlidePartData slice = new SlidePartData();
+						byte[] data = recv.getData();
 
-					slice.sessionNumber = (short)(data[1] & 0xff);
-					slice.numPack = (short)(data[2] & 0xff);
-					slice.maxPacketSize = (int)((data[3] & 0xff) << 8 | (data[4] & 0xff)); // mask the sign bit
-					slice.sequenceNumber = (short)(data[5] & 0xff);
-					int size = (int)((data[6] & 0xff) << 8 | (data[7] & 0xff)); // mask the sign bit
-					slice.start=false;
-					slice.end= false;
-					if((data[0] & SESSION_START) == SESSION_START) {
-						slice.start=true;
-					}
-					if((data[0] & SESSION_END) == SESSION_END){
-
-						slice.end=true;
-					}
-					System.out.println("Stampo contenuto pacchetto immagine: \n" + size);
-					slice.data = new byte[size];
-					System.arraycopy(data, HEADER_SIZE, slice.data, 0, size);
-					if(!receivedPacket.containsKey(slice.sessionNumber)){
-						receivedPacket.put(slice.sessionNumber, new ArrayList<SlidePartData>());
-						for(int i=0; i<slice.numPack; i++){
-							receivedPacket.get(slice.sessionNumber).add(null);
+						slice.sessionNumber = (short)(data[1] & 0xff);
+						slice.numPack = (short)(data[2] & 0xff);
+						slice.maxPacketSize = (int)((data[3] & 0xff) << 8 | (data[4] & 0xff)); // mask the sign bit
+						slice.sequenceNumber = (short)(data[5] & 0xff);
+						int size = (int)((data[6] & 0xff) << 8 | (data[7] & 0xff)); // mask the sign bit
+						slice.start=false;
+						slice.end= false;
+						if((data[0] & SESSION_START) == SESSION_START) {
+							slice.start=true;
 						}
-					}
+						if((data[0] & SESSION_END) == SESSION_END){
 
-					receivedPacket.get(slice.sessionNumber).set(slice.sequenceNumber, slice);
-
-					//Controllo se devo mandare NACK
-					if(slice.sequenceNumber-1 >= 0){
-						if(receivedPacket.get(slice.sessionNumber).get(slice.sequenceNumber-1) == null){
-							//devo inviare il NACK per il pacchetto SeqNum= data[5]-1 e sessionNum=data[1]
-							Nack evNack = new Nack(slice.sessionNumber, (byte) (slice.sequenceNumber-1));
-							sendEvent(evNack);
+							slice.end=true;
 						}
-					}
-					//Controllare se ho finito una slide
-					if( receivedPacket.get(k) != null){
-						if(!receivedPacket.get(k).contains(null)){
-							//Costruisco l'immagine e la aggiungo alla session
-							byte[] imageData = new byte[((receivedPacket.get(k).size()-1) * receivedPacket.get(k).get(0).maxPacketSize) + receivedPacket.get(k).get(receivedPacket.get(k).size()-1).data.length];
-							for(SlidePartData part : receivedPacket.get(k)){
-								System.arraycopy(part.data, 0, imageData, part.sequenceNumber*part.maxPacketSize , part.data.length);
+						System.out.println("Stampo contenuto pacchetto immagine: \n" + size);
+						slice.data = new byte[size];
+						System.arraycopy(data, HEADER_SIZE, slice.data, 0, size);
+						if(!receivedPacket.containsKey(slice.sessionNumber)){
+							receivedPacket.put(slice.sessionNumber, new ArrayList<SlidePartData>());
+							for(int i=0; i<slice.numPack; i++){
+								receivedPacket.get(slice.sessionNumber).add(null);
 							}
-							k++;
-							ByteArrayInputStream bis = new ByteArrayInputStream(imageData);
-							BufferedImage image = ImageIO.read(bis);
-							md.setImg(image);
-							md.notifyAll();
+						}
+
+						receivedPacket.get(slice.sessionNumber).set(slice.sequenceNumber, slice);
+
+						//Controllo se devo mandare NACK
+						if(slice.sequenceNumber-1 >= 0){
+							if(receivedPacket.get(slice.sessionNumber).get(slice.sequenceNumber-1) == null){
+								//devo inviare il NACK per il pacchetto SeqNum= data[5]-1 e sessionNum=data[1], oppure bisogna usare l'ultimo sequenceN arrivato
+								Nack evNack = new Nack(slice.sessionNumber, (byte) (slice.sequenceNumber-1));
+								sendEvent(evNack);
+							}
+						}
+						//Controllare se ho finito una slide
+						if( receivedPacket.get(k) != null){
+							if(!receivedPacket.get(k).contains(null)){
+								//Costruisco l'immagine e la aggiungo alla session
+								byte[] imageData = new byte[((receivedPacket.get(k).size()-1) * receivedPacket.get(k).get(0).maxPacketSize) + receivedPacket.get(k).get(receivedPacket.get(k).size()-1).data.length];
+								for(SlidePartData part : receivedPacket.get(k)){
+									System.arraycopy(part.data, 0, imageData, part.sequenceNumber*part.maxPacketSize , part.data.length);
+								}
+								k++;
+								ByteArrayInputStream bis = new ByteArrayInputStream(imageData);
+								BufferedImage image = ImageIO.read(bis);
+								md.setImg(image);
+								md.notifyAll();
+							}
 						}
 					}
 				}
