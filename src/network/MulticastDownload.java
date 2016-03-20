@@ -161,7 +161,9 @@ public class MulticastDownload {
 				e.printStackTrace();
 			}
 			numSlide--;
+			System.out.println("NUMSLIDE RIMANENTI: " +numSlide);
 			if(numSlide==0){
+				System.out.println("INVIO L'ACK");
 				//Ho finito di ricevere le immagini, mando l'ACK
 				Ack evAck = new Ack(session.getMyself());
 				receiverr.sendEvent(evAck);
@@ -204,6 +206,7 @@ class Receiverr extends Observable implements Runnable{
 		this.receivedPacket = new HashMap<Short, List<SlidePartData>>();
 		this.sender = sender;
 		this.md=md;
+		this.run=true;
 	}
 
 	public void setRun(boolean run){
@@ -234,7 +237,7 @@ class Receiverr extends Observable implements Runnable{
 		DatagramPacket recv = new DatagramPacket(buf, buf.length);
 		ByteArrayInputStream byteStream;
 		ObjectInputStream is;
-		int k=0;
+		short k=0;
 		try {
 			socket.setSoTimeout(500);
 		} catch (SocketException e1) {
@@ -254,12 +257,12 @@ class Receiverr extends Observable implements Runnable{
 					System.out.println("Evento Ricevuto: " + eventReceived.toString());
 
 					//qui ricevo l'evento di fine o gli ack e nack
-					if(eventReceived instanceof Nack && sender){
+					if(sender && eventReceived instanceof Nack){
 						Nack ev = (Nack) eventReceived;
 						//ho ricevuto un Nack devo rispedire indietro il pacchetto richiesto
 						md.sendPacket(ev.getSessionNumber(), ev.getSequenceNumber());
 					}
-					if(eventReceived instanceof Ack && sender){
+					if(sender && eventReceived instanceof Ack){
 						System.out.println("HO RICEVUTO UN ACK");
 						Ack ackEv = (Ack) eventReceived;
 						//devo veder se ho ricevuto  l'ack da tutti
@@ -275,7 +278,9 @@ class Receiverr extends Observable implements Runnable{
 					}
 
 				}catch(StreamCorruptedException exc){
+					System.out.println("Sto ricevendo un pezzo di immagine");
 					if(!sender){
+						System.out.println("ricevuto pezzo di immagine");
 						//Le immagini mi interessano solo se non sono il sender
 						//Qui forse stiamo ricevendo l'immagine
 						System.out.println("Qui forse stiamo ricevendo l'immagine");
@@ -305,8 +310,10 @@ class Receiverr extends Observable implements Runnable{
 						System.out.println("Stampo contenuto pacchetto immagine: \n" + size);
 						slice.data = new byte[size];
 						System.arraycopy(data, HEADER_SIZE, slice.data, 0, size);
+						System.out.println("SESSION NUMBER: "+ slice.sessionNumber);
 						if(!receivedPacket.containsKey(slice.sessionNumber)){
 							receivedPacket.put(slice.sessionNumber, new ArrayList<SlidePartData>());
+							System.out.println("RIempio il vettore con NULL");
 							for(int i=0; i<slice.numPack; i++){
 								receivedPacket.get(slice.sessionNumber).add(null);
 							}
@@ -317,14 +324,17 @@ class Receiverr extends Observable implements Runnable{
 						//Controllo se devo mandare NACK
 						if(slice.sequenceNumber-1 >= 0){
 							if(receivedPacket.get(slice.sessionNumber).get(slice.sequenceNumber-1) == null){
+								System.out.println("INVIO NACK");
 								//devo inviare il NACK per il pacchetto SeqNum= data[5]-1 e sessionNum=data[1], oppure bisogna usare l'ultimo sequenceN arrivato
 								Nack evNack = new Nack(slice.sessionNumber, (byte) (slice.sequenceNumber-1));
 								sendEvent(evNack);
 							}
 						}
 						//Controllare se ho finito una slide
-						if( receivedPacket.get(k) != null){
+						if(receivedPacket.containsKey(k)){
+							System.out.println("FINITO UNA SLIDE?");
 							if(!receivedPacket.get(k).contains(null)){
+								System.out.println("Una slide è finita!!!");
 								//Costruisco l'immagine e la aggiungo alla session
 								byte[] imageData = new byte[((receivedPacket.get(k).size()-1) * receivedPacket.get(k).get(0).maxPacketSize) + receivedPacket.get(k).get(receivedPacket.get(k).size()-1).data.length];
 								for(SlidePartData part : receivedPacket.get(k)){
@@ -334,7 +344,9 @@ class Receiverr extends Observable implements Runnable{
 								ByteArrayInputStream bis = new ByteArrayInputStream(imageData);
 								BufferedImage image = ImageIO.read(bis);
 								md.setImg(image);
+								synchronized(md){
 								md.notifyAll();
+								}
 							}
 						}
 					}
@@ -348,7 +360,7 @@ class Receiverr extends Observable implements Runnable{
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
 				//TODO QUI non stiamo ricevendo l'immagine
-
+				System.out.println("CLASS NOT FOUND EXEC");
 			}
 		}
 	}
