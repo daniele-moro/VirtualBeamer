@@ -37,10 +37,11 @@ public class View {
 	public View(Session s, User u){
 		this.session = s;
 		this.session.setMyself(u);
-		this.controller = new Controller(this.session);
+		this.controller = new Controller(this.session, this);
 		session.setSlides(new ArrayList<BufferedImage>());
 		controller.requestToJoin();
 		initGui();
+		
 	}
 
 
@@ -56,10 +57,10 @@ public class View {
 		changeSlide = new ImageIcon(slideToShow);
 		System.out.println(gui);
 		gui.ChangeSlide(changeSlide);
-		if(!sessionStarted) {
+		/*if(!sessionStarted) {
 			sessionStarted = true; 
 			gui.presentationButtons();
-		}
+		}*/
 		
 
 		//TODO: add column with user lists

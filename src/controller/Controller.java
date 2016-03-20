@@ -65,9 +65,9 @@ public class Controller implements Observer{
 		this.session = session;
 	}
 
-	public Controller(Session session){
+	public Controller(Session session, View view){
 		this.session=session;
-		this.view= new View(session, this);
+		this.view= view;
 		this.crashDetector = new CrashDetector(session, this);
 		if(session.isLeader()){
 			//Se è leader devo istanziare il serverSocket
@@ -398,7 +398,7 @@ public class Controller implements Observer{
 
 	public void next(){
 		int actualSlide = session.getActualSlide();
-		if(actualSlide < session.getSlides().size() ){
+		if(actualSlide < session.getSlides().size() - 1 ){
 			this.goTo(actualSlide+1);
 		}
 	}
