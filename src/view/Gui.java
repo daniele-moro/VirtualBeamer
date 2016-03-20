@@ -347,14 +347,21 @@ public class Gui {
 		userList = users;
 		passControlHandler controlHandler = new passControlHandler();
 		frameMaster.remove(rightPanel);
-
-		ub = new UserButton(users.get(users.size()-1));
-		ub.setText(users.get(users.size()-1).getName());
-		ub.setSize(200, 100);
-		ub.addActionListener(controlHandler);
-		rightPanel.add(ub); 
-
+		
+		
+		
+		rightPanel = new JPanel();
+		rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+		for (User user : userList) {
+			ub = new UserButton(user);
+			ub.setText(user.getName());
+			ub.setSize(200, 100);
+			ub.addActionListener(controlHandler);
+			rightPanel.add(ub); 
+			
+		}
 		frameMaster.add(rightPanel, BorderLayout.EAST);
+		
 		//frameMaster.invalidate();
 		frameMaster.pack();
 		frameMaster.validate();

@@ -53,7 +53,7 @@ public class CrashDetector extends Observable{
 		this.addObserver(controller);
 		this.counters = new HashMap<User, Integer>();
 		try {
-			
+
 			group = InetAddress.getByName(session.getSessionIP());
 			socket = new MulticastSocket(Session.port);
 			socket.joinGroup(group);
@@ -79,11 +79,11 @@ public class CrashDetector extends Observable{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 
 
 	}
-	
+
 	public boolean isAlreadySentElect() {
 		return alreadySentElect;
 	}
@@ -102,14 +102,14 @@ public class CrashDetector extends Observable{
 			}
 		}
 	}
-	
+
 	public void notifyAfterCoordinator(NewLeader event) {
 		setChanged(); 
 		notifyObservers(event);
 	}
 
 	public synchronized void reset(User user){
-		counters.remove(user); 
+		//counters.remove(user); 
 		counters.put(user, 0);
 	}
 
@@ -121,23 +121,23 @@ public class CrashDetector extends Observable{
 		System.out.println(counters);
 		counters.put(user, 0);
 	}
-	
+
 	public void startElect() {
 		Elect newElectEvent = new Elect(session.getMyself());
 		receiverAlive.sendEvent(newElectEvent);
 		checkForElectionConfirm = new Timer(true);
 		checkForElectionConfirm.schedule(new TimerTask()  {
-			
+
 			@Override
 			public void run() {
 				Coordinator c = new Coordinator(session.getMyself());
 				receiverAlive.sendEvent(c); 
-				
+
 			}
 		}, 1000);
-		
+
 	}
-	
+
 	public void stopElect(){
 		checkForElectionConfirm.cancel();
 	}
@@ -159,59 +159,60 @@ class ReceiverAlive implements Runnable{
 
 	@Override
 	public void run() {
-		byte[] buf = new byte[1000];
-		DatagramPacket recv = new DatagramPacket(buf, buf.length);
-		ByteArrayInputStream byteStream;
-		ObjectInputStream is;
-		try {
-			socket.receive(recv);
-			GenericEvent eventReceived = null;
-			byteStream = new ByteArrayInputStream(buf);
-			is = new ObjectInputStream(new BufferedInputStream(byteStream));
+		while(true){
+			byte[] buf = new byte[1000];
+			DatagramPacket recv = new DatagramPacket(buf, buf.length);
+			ByteArrayInputStream byteStream;
+			ObjectInputStream is;
+			try {
+				socket.receive(recv);
+				GenericEvent eventReceived = null;
+				byteStream = new ByteArrayInputStream(buf);
+				is = new ObjectInputStream(new BufferedInputStream(byteStream));
 
-			eventReceived=(GenericEvent) is.readObject();
+				eventReceived=(GenericEvent) is.readObject();
 
-			if(eventReceived instanceof Alive){
-				Alive alv = (Alive) eventReceived;
-				cd.reset(alv.getAliveUser());
-			}
+				if(eventReceived instanceof Alive){
+					Alive alv = (Alive) eventReceived;
+					cd.reset(alv.getAliveUser());
+				}
 
-			if(eventReceived instanceof Elect) {
-				Elect elect = (Elect) eventReceived;
-				if(elect.getUser().getId() < session.getMyself().getId()) {
-					//invio stop per fermare l'elezione a quell'utente
-					Stop stop = new Stop(elect.getUser());
-					sendEvent(stop);
-					if(!cd.isAlreadySentElect()) {
-						//creo e invio la nuova elezione
-						cd.startElect();
+				if(eventReceived instanceof Elect) {
+					Elect elect = (Elect) eventReceived;
+					if(elect.getUser().getId() < session.getMyself().getId()) {
+						//invio stop per fermare l'elezione a quell'utente
+						Stop stop = new Stop(elect.getUser());
+						sendEvent(stop);
+						if(!cd.isAlreadySentElect()) {
+							//creo e invio la nuova elezione
+							cd.startElect();
+						}
 					}
 				}
-			}
-			
-			if(eventReceived instanceof Stop) {
-				Stop stop = (Stop) eventReceived;
-				if(stop.getUser().equals(session.getMyself())) {
-					cd.stopElect();
-				}
-			}
-			
-			if(eventReceived instanceof Coordinator) {
-				NewLeader nl = new NewLeader(((Coordinator) eventReceived).getNewLeader());
-				cd.notifyAfterCoordinator(nl);
-			}
 
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+				if(eventReceived instanceof Stop) {
+					Stop stop = (Stop) eventReceived;
+					if(stop.getUser().equals(session.getMyself())) {
+						cd.stopElect();
+					}
+				}
+
+				if(eventReceived instanceof Coordinator) {
+					NewLeader nl = new NewLeader(((Coordinator) eventReceived).getNewLeader());
+					cd.notifyAfterCoordinator(nl);
+				}
+
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
-
 	}
-	
+
 	public synchronized void sendEvent(GenericEvent event) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos;
@@ -227,7 +228,7 @@ class ReceiverAlive implements Runnable{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 	}
 
 }

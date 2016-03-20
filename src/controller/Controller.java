@@ -226,6 +226,8 @@ public class Controller implements Observer{
 				System.out.println(rqtj.getJoiner());
 				crashDetector.addUser(rqtj.getJoiner());
 			}
+			//Aggiorno la view con gli utenti
+			view.displayUsers(session.getJoined());
 			break;
 
 		case ACK_EVENT:
