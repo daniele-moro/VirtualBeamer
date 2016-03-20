@@ -49,18 +49,26 @@ public class MulticastDownload {
 	private boolean sentAll;
 
 	public MulticastDownload(Session session, int numslide, boolean sender){
-		this.sentAll=false;
-		this.sentPacket = new HashMap<Integer, Map<Byte, byte[]>>();
-		this.numSlide=numslide;
-		this.sessionNumber=0;
-		this.session=session;
-		this.ackedUsers=new ArrayList<User>();
+		try {
+			group = InetAddress.getByName(session.getSessionIP());
+			socket = new MulticastSocket(Session.portSlide);
+			socket.joinGroup(group);
+			
+			this.sentAll=false;
+			this.sentPacket = new HashMap<Integer, Map<Byte, byte[]>>();
+			this.numSlide=numslide;
+			this.sessionNumber=0;
+			this.session=session;
+			this.ackedUsers=new ArrayList<User>();
 
-		//genero il thread per ricevere i pacchetti (ACK, NACK, Parti di slide)
-		receiverr = new Receiverr(group,socket,sender, this);
-		Thread t = new Thread(receiverr);
-		t.start();
-
+			//genero il thread per ricevere i pacchetti (ACK, NACK, Parti di slide)
+			receiverr = new Receiverr(group,socket,sender, this);
+			Thread t = new Thread(receiverr);
+			t.start();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 

@@ -16,6 +16,7 @@ public class Session extends Observable implements Serializable{
 	public final static String ipHello ="228.0.0.1";
 	public final static int portHello = 6790;
 	public final static int portLeader = 6791;
+	public final static int portSlide = 6792;
 	
 
 	private User leader;
