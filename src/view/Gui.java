@@ -194,8 +194,8 @@ public class Gui {
 		bottomInitPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
 		startButton = new JButton("START");
 		startButton.setSize(250, 96);
-		nextSlideHandler nsh = new nextSlideHandler();
-		startButton.addActionListener(nsh);
+		StartHandler startHandler = new StartHandler();
+		startButton.addActionListener(startHandler);
 		bottomInitPanel.add(startButton);
 		//When press on START, ActionListener and all clients must be lead to first slide
 
@@ -239,7 +239,7 @@ public class Gui {
 		bottomInitPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
 		startButton = new JButton("START");
 		startButton.setSize(250, 96);
-		nextSlideHandler nsh = new nextSlideHandler();
+		NextSlideHandler nsh = new NextSlideHandler();
 		startButton.addActionListener(nsh);
 		bottomInitPanel.add(startButton);
 		//When press on START, ActionListener and all clients must be lead to first slide
@@ -296,7 +296,7 @@ public class Gui {
 		bottomInitPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
 		leaveButton = new JButton("LEAVE");
 		leaveButton.setSize(250, 96);
-		leaveHandler lh = new leaveHandler();
+		LeaveHandler lh = new LeaveHandler();
 		leaveButton.addActionListener(lh);
 		bottomInitPanel.add(leaveButton);
 
@@ -331,10 +331,10 @@ public class Gui {
 		bottomPanel.add(prevSlide);
 		bottomPanel.add(nextSlide);
 		
-		nextSlideHandler nsh = new nextSlideHandler();
+		NextSlideHandler nsh = new NextSlideHandler();
 		nextSlide.addActionListener(nsh);
 		
-		prevSlideHandler psh = new prevSlideHandler();
+		PrevSlideHandler psh = new PrevSlideHandler();
 		prevSlide.addActionListener(psh);
 		
 		centralPanel.remove(bottomInitPanel);
@@ -417,10 +417,16 @@ public class Gui {
 		
 		}
 	}//End of class passControlHandler
+	
+	
+	private class StartHandler implements ActionListener {
+		public void actionPerformed(ActionEvent event) {
+			controller.startSession();
+		}
+	}
 
 
-
-	private class nextSlideHandler implements ActionListener
+	private class NextSlideHandler implements ActionListener
 	{
 		public void actionPerformed(ActionEvent event)
 		{
@@ -429,7 +435,7 @@ public class Gui {
 		}
 	}//End of class startHandler
 	
-	private class prevSlideHandler implements ActionListener
+	private class PrevSlideHandler implements ActionListener
 	{
 		public void actionPerformed(ActionEvent event)
 		{
@@ -441,7 +447,7 @@ public class Gui {
 	
 	
 
-	private class leaveHandler implements ActionListener
+	private class LeaveHandler implements ActionListener
 	{
 		public void actionPerformed(ActionEvent event)
 		{
