@@ -93,7 +93,7 @@ public class MulticastDownload {
 	 * @param bufferedImage
 	 * @return True: la slide è stat spedita, False: la slide non è stata spedita perchè sono già state spedite tutte oppure perchè c'è stato un errore
 	 */
-	public boolean sendSlide(BufferedImage bufferedImage){
+	public synchronized boolean sendSlide(BufferedImage bufferedImage){
 		List<byte[]> packets;
 		if(numSlide>0){
 			try {
@@ -103,7 +103,7 @@ public class MulticastDownload {
 				}
 				for(byte[] elem: packets) {
 
-					DatagramPacket  dPacket = new DatagramPacket(elem, elem.length, group, Session.port);
+					DatagramPacket  dPacket = new DatagramPacket(elem, elem.length, group, Session.portSlide);
 					synchronized(sentPacket){
 						socket.send(dPacket);
 					}
@@ -135,7 +135,7 @@ public class MulticastDownload {
 	void sendPacket(short sessionNumber, short sequenceNumber){
 		try {
 			DatagramPacket  dPacket = new DatagramPacket(sentPacket.get(sessionNumber).get(sequenceNumber), 
-					sentPacket.get(sessionNumber).get(sequenceNumber).length, group, Session.port);
+					sentPacket.get(sessionNumber).get(sequenceNumber).length, group, Session.portSlide);
 			synchronized(sentPacket){
 				socket.send(dPacket);
 			}
@@ -218,7 +218,7 @@ class Receiverr extends Observable implements Runnable{
 			oos.writeObject(event);
 			baos.toByteArray();
 			//Creazione del pacchetto
-			DatagramPacket packetedEvent = new DatagramPacket(baos.toByteArray(), baos.toByteArray().length, group, Session.port);
+			DatagramPacket packetedEvent = new DatagramPacket(baos.toByteArray(), baos.toByteArray().length, group, Session.portSlide);
 			//Spedizione pacchetto
 			socket.send(packetedEvent);
 		} catch (IOException e) {
@@ -260,6 +260,7 @@ class Receiverr extends Observable implements Runnable{
 						md.sendPacket(ev.getSessionNumber(), ev.getSequenceNumber());
 					}
 					if(eventReceived instanceof Ack && sender){
+						System.out.println("HO RICEVUTO UN ACK");
 						Ack ackEv = (Ack) eventReceived;
 						//devo veder se ho ricevuto  l'ack da tutti
 						if(md.ackedUsers.contains(ackEv.getUser())){
@@ -267,6 +268,7 @@ class Receiverr extends Observable implements Runnable{
 						}
 						if(md.ackedUsers.size() == md.session.getJoined().size()){
 							//Ho ricevuto l'ack da tutti, ho finito la spedizione.
+							System.out.println("Ho ricevuto l'ACK da tutti!!");
 							md.sentAll();
 							md.notifyAll();
 						}
