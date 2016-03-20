@@ -85,6 +85,7 @@ public class Controller implements Observer{
 	public Controller(Session session, Gui gui){
 		this.session=session;
 		this.view= new View(session, this, gui);
+		this.crashDetector = new CrashDetector(session, this);
 		if(session.isLeader()){
 			//Se è leader devo istanziare il serverSocket
 			try {
@@ -220,6 +221,9 @@ public class Controller implements Observer{
 				nlh.sendToUsers(joinEv);
 				//Aggiungiamo l'utente nel model locale
 				session.addJoinedUser(rqtj.getJoiner());
+				System.out.println(crashDetector);
+				System.out.println(rqtj);
+				System.out.println(rqtj.getJoiner());
 				crashDetector.addUser(rqtj.getJoiner());
 			}
 			break;

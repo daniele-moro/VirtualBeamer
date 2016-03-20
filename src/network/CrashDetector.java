@@ -10,12 +10,13 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Timer;
 import java.util.TimerTask;
-import events.Coordinator;
 
+import events.Coordinator;
 import controller.Controller;
 import events.Alive;
 import events.Crash;
@@ -50,6 +51,7 @@ public class CrashDetector extends Observable{
 
 	public CrashDetector(Session session, Controller controller) {
 		this.addObserver(controller);
+		this.counters = new HashMap<User, Integer>();
 		try {
 			
 			group = InetAddress.getByName(session.getSessionIP());
@@ -116,6 +118,7 @@ public class CrashDetector extends Observable{
 	}
 
 	public synchronized void addUser(User user){
+		System.out.println(counters);
 		counters.put(user, 0);
 	}
 	
