@@ -20,6 +20,7 @@ import events.*;
 import model.Session;
 import model.User;
 import network.CrashDetector;
+import network.MulticastDownload;
 import network.NetworkHandler;
 import network.NetworkHelloReceiver;
 import network.NetworkLeaderHandler;
@@ -152,6 +153,19 @@ public class Controller implements Observer{
 		case NACK:
 			if(session.isLeader()){
 				slideSender.sendMissingPacket(((Nack) arg).getSequenceNumber());
+			}
+			break;
+			
+		case START_SESSION:
+			//inizia la sessione, devo ricevere le slide
+			StartSession evStart = (StartSession) arg;
+			MulticastDownload slReceiver = new MulticastDownload(session,evStart.getNumSlide(), false);
+			//ricevo le slide
+			while(true){
+				BufferedImage imgRec = slReceiver.receive();
+				if(imgRec!=null){
+					session.addSlide(imgRec);
+				} else break;
 			}
 			break;
 		case SLIDEPART:
@@ -362,7 +376,14 @@ public class Controller implements Observer{
 
 
 	public void startSession(){
-		slideSender.sendSlides();
+		//invio l'evento di start, che segnala quante slide ci sono da visualizzare
+		StartSession evStart = new StartSession(session.getSlides().size());
+		nlh.sendToUsers(evStart);
+		//Invio le slide
+		MulticastDownload sendSlides = new MulticastDownload(session, session.getSlides().size(), true);
+		for(BufferedImage elem : session.getSlides()){
+			sendSlides.sendSlide(elem);
+		}
 	}
 
 	public void prev(){
@@ -424,10 +445,6 @@ public class Controller implements Observer{
 	public void leaderElection() {
 		crashDetector.startElect();
 	}
-
-
-
-
 
 
 	/**

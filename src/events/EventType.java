@@ -18,5 +18,6 @@ public enum EventType {
 	ELECT, 
 	STOP, 
 	COORDINATOR,
-	END_SLIDES;
+	END_SLIDES,
+	START_SESSION;
 }
