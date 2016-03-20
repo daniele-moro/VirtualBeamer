@@ -54,6 +54,7 @@ public class View {
 		//display new slide, can be the next one or the previous one
 
 		changeSlide = new ImageIcon(slideToShow);
+		System.out.println(gui);
 		gui.ChangeSlide(changeSlide);
 		if(!sessionStarted) {
 			sessionStarted = true; 
@@ -79,6 +80,9 @@ public class View {
 	
 	public void becomeClient(){
 		gui.leaderToClient();
+	}
+	public void presentationButtons(){
+		gui.presentationButtons();
 	}
 
 	

@@ -266,14 +266,16 @@ class Receiverr extends Observable implements Runnable{
 						System.out.println("HO RICEVUTO UN ACK");
 						Ack ackEv = (Ack) eventReceived;
 						//devo veder se ho ricevuto  l'ack da tutti
-						if(md.ackedUsers.contains(ackEv.getUser())){
+						if(!md.ackedUsers.contains(ackEv.getUser())){
 							md.ackedUsers.add(ackEv.getUser());
 						}
-						if(md.ackedUsers.size() == md.session.getJoined().size()){
+						if(md.ackedUsers.size() == md.session.getJoined().size()-1){
 							//Ho ricevuto l'ack da tutti, ho finito la spedizione.
 							System.out.println("Ho ricevuto l'ACK da tutti!!");
 							md.sentAll();
+							synchronized(md){
 							md.notifyAll();
+							}
 						}
 					}
 

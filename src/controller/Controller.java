@@ -165,6 +165,8 @@ public class Controller implements Observer{
 				BufferedImage imgRec = slReceiver.receive();
 				if(imgRec!=null){
 					session.addSlide(imgRec);
+					System.out.println(session.getSlides().size());
+					System.out.println("--------------------INserisco una slide------------" + session.getSlides().size());
 				} else break;
 			}
 			break;
@@ -384,6 +386,7 @@ public class Controller implements Observer{
 		for(BufferedImage elem : session.getSlides()){
 			sendSlides.sendSlide(elem);
 		}
+		view.presentationButtons();
 	}
 
 	public void prev(){
