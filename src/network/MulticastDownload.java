@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.imageio.ImageIO;
 
@@ -88,6 +90,11 @@ public class MulticastDownload {
 
 
 
+	public int getNumSlide() {
+		return numSlide;
+	}
+
+
 	/**
 	 * Metodo per spedire le immagini in multicast
 	 * @param bufferedImage
@@ -126,6 +133,7 @@ public class MulticastDownload {
 							}
 						}
 					}
+					receiverr.setRun(false);
 					return false;
 				}
 				return true;
@@ -139,14 +147,14 @@ public class MulticastDownload {
 
 	void sendPacket(int sessionNumber, int sequenceNumber){
 		try {
-			
+
 			DatagramPacket  dPacket = new DatagramPacket(sentPacket.get(sessionNumber).get(sequenceNumber), 
 					sentPacket.get(sessionNumber).get(sequenceNumber).length, group, Session.portSlide);
-			//synchronized(this){
+			synchronized(this){
 				socket.send(dPacket);
-				
-			//}
-				System.out.println("Spedito pacchetto session: "+sessionNumber + " sequence: "+sequenceNumber);
+
+			}
+			System.out.println("Spedito pacchetto session: "+sessionNumber + " sequence: "+sequenceNumber);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -205,19 +213,36 @@ class Receiverr extends Observable implements Runnable{
 	private boolean run;
 	private boolean sender;
 	private MulticastDownload md;
+	private TimerReceiveSlide trs;
 
-	private Map<Short,  List<SlidePartData>> receivedPacket;
+	protected Map<Integer, List<SlidePartData>> getReceivedPacket() {
+		return receivedPacket;
+	}
+
+
+	private Map<Integer,  List<SlidePartData>> receivedPacket;
 
 	public Receiverr(InetAddress group, MulticastSocket socket, boolean sender, MulticastDownload md){
 		this.group=group;
 		this.socket = socket;
-		this.receivedPacket = new HashMap<Short, List<SlidePartData>>();
+		this.receivedPacket = new HashMap<Integer, List<SlidePartData>>();
 		this.sender = sender;
 		this.md=md;
 		this.run=true;
+		if(!sender) {
+			for(int i = 0; i < md.getNumSlide(); i++) {
+				receivedPacket.put(i, new ArrayList<SlidePartData>());
+			}
+			trs = new TimerReceiveSlide(this);
+			Timer timer = new Timer(true); 
+			timer.scheduleAtFixedRate(trs, 2000, 1000);
+		}
 	}
 
 	public void setRun(boolean run){
+		if(!sender){
+			trs.cancel();
+		}
 		this.run=run;
 	}
 
@@ -245,7 +270,7 @@ class Receiverr extends Observable implements Runnable{
 		DatagramPacket recv = new DatagramPacket(buf, buf.length);
 		ByteArrayInputStream byteStream;
 		ObjectInputStream is;
-		short k=0;
+		int k=0;
 		try {
 			socket.setSoTimeout(500);
 		} catch (SocketException e1) {
@@ -320,25 +345,25 @@ class Receiverr extends Observable implements Runnable{
 
 							slice.end=true;
 						}
+						System.out.println("pacchetto ricevuto: session number = " + slice.sessionNumber + ", sequenceNumber = " + slice.sequenceNumber);
 						System.out.println("Stampo contenuto pacchetto immagine: \n" + size);
 						slice.data = new byte[size];
 						System.arraycopy(data, HEADER_SIZE, slice.data, 0, size);
 						System.out.println("SESSION NUMBER: "+ slice.sessionNumber);
-						if(!receivedPacket.containsKey(slice.sessionNumber)){
-							receivedPacket.put(slice.sessionNumber, new ArrayList<SlidePartData>());
+						if(receivedPacket.get((int)slice.sessionNumber).size()==0){
 							System.out.println("RIempio il vettore con NULL");
 							for(int i=0; i<slice.numPack; i++){
-								receivedPacket.get(slice.sessionNumber).add(null);
+								receivedPacket.get((int)slice.sessionNumber).add(null);
 							}
 						}
 
-						receivedPacket.get(slice.sessionNumber).set(slice.sequenceNumber, slice);
+						receivedPacket.get((int)slice.sessionNumber).set(slice.sequenceNumber, slice);
 
 						//Controllo se devo mandare NACK
 						//TODO -1 dello short?????
 						if(slice.sequenceNumber-1 >= 0){
-							if(receivedPacket.get(slice.sessionNumber).get(slice.sequenceNumber-1) == null){
-								System.out.println("INVIO NACK Session: "+ slice.sessionNumber + "Sequence: " + (slice.sequenceNumber-1));
+							if(receivedPacket.get((int)slice.sessionNumber).get(slice.sequenceNumber-1) == null){
+								System.out.println("INVIO NACK Session: "+ (int) slice.sessionNumber + "Sequence: " + (slice.sequenceNumber-1));
 								//devo inviare il NACK per il pacchetto SeqNum= data[5]-1 e sessionNum=data[1], oppure bisogna usare l'ultimo sequenceN arrivato
 								Nack evNack = new Nack((int) slice.sessionNumber, (int) (slice.sequenceNumber-1));
 								sendEvent(evNack);
@@ -378,4 +403,41 @@ class Receiverr extends Observable implements Runnable{
 			}
 		}
 	}
+}
+
+class TimerReceiveSlide extends TimerTask{
+
+	private Receiverr r; 
+
+	public TimerReceiveSlide(Receiverr r) {
+
+		this.r=r;
+
+	}
+
+
+	@Override
+	public void run() {
+		for(Map.Entry<Integer, List<SlidePartData>> entry : r.getReceivedPacket().entrySet()){
+			if(entry.getValue().size()==0) {
+				//non mi sono arrivati pacchetti di questa slide
+				Nack nack = new Nack(entry.getKey(), 0); 
+				r.sendEvent(nack);
+			} else if (entry.getValue().contains(null)){
+				int i = 0; 
+				for(SlidePartData el : entry.getValue()){
+					if(el == null) {
+						Nack nack = new Nack(entry.getKey(), i); 
+						r.sendEvent(nack);
+					}
+					i++;
+				}
+			}
+		}
+
+
+
+	}
+
+
 }
