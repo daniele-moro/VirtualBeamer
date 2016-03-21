@@ -15,12 +15,12 @@ import javax.swing.JPanel;
 public class PacketCreator {
 
 	/* Flags and sizes */
-	public static int HEADER_SIZE = 8;
-	public static int MAX_PACKETS = 255;
-	public static int SESSION_START = 128;
-	public static int SESSION_END = 64;
-	public static int DATAGRAM_MAX_SIZE = 65507 - HEADER_SIZE;
-	public static int MAX_SESSION_NUMBER = 255;
+	public static final int HEADER_SIZE = 8;
+	public static final int MAX_PACKETS = 255;
+	public static final int SESSION_START = 128;
+	public static final int SESSION_END = 64;
+	public static final int DATAGRAM_MAX_SIZE = 60000;
+	public static final int MAX_SESSION_NUMBER = 255;
 
 	public static String OUTPUT_FORMAT = "jpeg"; 
 

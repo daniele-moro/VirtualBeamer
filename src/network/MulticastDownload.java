@@ -139,17 +139,12 @@ public class MulticastDownload {
 
 	void sendPacket(int sessionNumber, int sequenceNumber){
 		try {
-
+			
 			DatagramPacket  dPacket = new DatagramPacket(sentPacket.get(sessionNumber).get(sequenceNumber), 
 					sentPacket.get(sessionNumber).get(sequenceNumber).length, group, Session.portSlide);
 			//synchronized(this){
 				socket.send(dPacket);
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				
 			//}
 				System.out.println("Spedito pacchetto session: "+sessionNumber + " sequence: "+sequenceNumber);
 		} catch (IOException e) {
