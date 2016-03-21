@@ -387,6 +387,7 @@ public class Controller implements Observer{
 			sendSlides.sendSlide(elem);
 		}
 		view.presentationButtons();
+		this.goTo(0);
 	}
 
 	public void prev(){

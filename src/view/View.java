@@ -41,6 +41,7 @@ public class View {
 		session.setSlides(new ArrayList<BufferedImage>());
 		controller.requestToJoin();
 		initGui();
+		gui.setController(this.controller);
 		
 	}
 
