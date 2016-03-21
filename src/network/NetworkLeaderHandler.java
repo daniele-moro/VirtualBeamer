@@ -108,6 +108,7 @@ class ConnectionServer extends Observable implements Runnable{
 				Thread.sleep(10);
 				//Attendo una nuova connessione
 				Socket newJoiner = serverSocket.accept();
+				System.out.println("---ACCETTATA CONNESSIONE----");
 				ObjectOutputStream oos = new ObjectOutputStream(newJoiner.getOutputStream());
 				oos.flush();
 				ObjectInputStream ois = new ObjectInputStream(newJoiner.getInputStream());

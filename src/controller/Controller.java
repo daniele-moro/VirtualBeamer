@@ -33,7 +33,7 @@ public class Controller implements Observer{
 
 	private Session session; 
 	private NetworkSlideSender slideSender;
-	
+
 	private CrashDetector crashDetector; 
 
 	//Gestisce la rete per i client
@@ -79,8 +79,8 @@ public class Controller implements Observer{
 		}
 
 	}
-	
-	
+
+
 	public Controller(Session session, Gui gui){
 		this.session=session;
 		this.view= new View(session, this, gui);
@@ -153,7 +153,7 @@ public class Controller implements Observer{
 				slideSender.sendMissingPacket(((Nack) arg).getSequenceNumber());
 			}
 			break;
-			
+
 		case START_SESSION:
 			//inizia la sessione, devo ricevere le slide
 			StartSession evStart = (StartSession) arg;
@@ -216,8 +216,8 @@ public class Controller implements Observer{
 			session.setActualSlide(((GoTo)arg).getSlideToShow());
 			view.changeSlide(session.getSlides().get(((GoTo)arg).getSlideToShow()));
 			break;
-			
-			
+
+
 		case NEWLEADER:
 			NewLeader e = (NewLeader) arg;
 			session.setLeader(e.getNewLeader());
@@ -225,11 +225,11 @@ public class Controller implements Observer{
 			networkHandler.close();
 			if(session.isLeader()){
 				//Sono il nuovo leander
-				
+
 				//Cambio la view
 				view.becomeMaster();
 				view.changeSlide(session.getSlides().get(session.getActualSlide()));
-				
+
 				//ora devo inizializzare tutti i socket che verranno aperti dagli altri client
 				System.out.println("-------APERTURA SOCKET VERSO TUTTI GLI ALTRI CLIENT-------");
 				nlh = new NetworkLeaderHandler(this);
@@ -241,10 +241,12 @@ public class Controller implements Observer{
 				RequestToJoin reqTJ = new RequestToJoin(session.getMyself());
 				networkHandler.send(reqTJ);
 			}
+			crashDetector.setAlreadySentElect(false);
 
 			break;
 		case CRASH: 
 			Crash crash = (Crash) arg;
+			removeUser(crash.getCrashedUser());
 
 			if(session.isSessionCreator()) {
 				//crash del leader e io sono session creator
@@ -258,7 +260,7 @@ public class Controller implements Observer{
 
 				} else {
 					//crash non del leader e io sono session creator
-					removeUser(crash.getCrashedUser());
+					//removeUser(crash.getCrashedUser());
 				}
 			} else {
 				//non sono il session creator
@@ -266,6 +268,7 @@ public class Controller implements Observer{
 					//siamo nel caso in cui è crashato il leader
 					if(session.getLeader().equals(session.getSessionCreator())) {
 						//se session creator e session leader coincidono e quell'utente è crashato, leader election
+						System.out.println("CRASH DEL LEADER, SESSION CREATOR COINCIDE CON LEADER, LANCIO LEADER ELECTION");
 						leaderElection();
 					} else {
 						//session creator e session leader sono due utenti diversi
@@ -277,15 +280,17 @@ public class Controller implements Observer{
 							networkHandler = new NetworkHandler(session.getSessionCreator().getIp(), this);
 						} else {
 							//il session creator non è attivo, quindi devo lanciare la leader election
+							System.out.println("CRASH DEL LEADER, SESSION CREATOR NON ATTIVO, LANCIO LEADER ELECTION");
 							leaderElection();
 						}
 
 					}
 				} else {
 					//non è crashato il leader: rimuovo solo l'utente
-					removeUser(crash.getCrashedUser());
+					//removeUser(crash.getCrashedUser());
 				}
 			}
+
 
 			break;
 		case TERMINATE:
@@ -302,23 +307,23 @@ public class Controller implements Observer{
 
 	}
 
-//	private void executeEvent(GenericEvent event) {
-//		switch(((GenericEvent) event).getType()){
-//		case GOTO:
-//
-//			break;
-//		case JOIN:
-//			System.out.println("Aggiunto user: " + ((Join)event).getJoiner().toString());
-//			session.addJoinedUser(((Join) event).getJoiner());
-//			break;
-//		case NEWLEADER:
-//			session.setLeader(((NewLeader) event).getNewLeader());
-//			break;
-//		case TERMINATE:
-//			break;
-//		}
-//
-//	}
+	//	private void executeEvent(GenericEvent event) {
+	//		switch(((GenericEvent) event).getType()){
+	//		case GOTO:
+	//
+	//			break;
+	//		case JOIN:
+	//			System.out.println("Aggiunto user: " + ((Join)event).getJoiner().toString());
+	//			session.addJoinedUser(((Join) event).getJoiner());
+	//			break;
+	//		case NEWLEADER:
+	//			session.setLeader(((NewLeader) event).getNewLeader());
+	//			break;
+	//		case TERMINATE:
+	//			break;
+	//		}
+	//
+	//	}
 
 	//	private void sendAck(GenericEvent arg, User user){
 	//		AckEvent ack = new AckEvent(arg, user);
@@ -373,19 +378,20 @@ public class Controller implements Observer{
 		//Ora applico alla mia sessione
 		session.addJoinedUser(user);
 		crashDetector.addUser(user);
-		}
+	}
 
 
 	public void newLeader(User user) {
 		view.becomeClient();
 		view.changeSlide(session.getSlides().get(session.getActualSlide()));
+		view.displayUsers(session.getJoined());
 		//Creo l'evento e lo invio a tutti i client (specificando qual'è il nuovo leader)
 		NewLeader nl = new NewLeader(user); 
 		nlh.sendToUsers(nl);
 		session.setLeader(user);
 		nlh.closeOldSockets();
 		nlh = null;
-		
+
 		//Ora non sono più leader, devo aprire un socket verso il New Leader
 		networkHandler = new NetworkHandler(session.getLeader().getIp(), this);
 		RequestToJoin rqtj = new RequestToJoin(session.getMyself());
@@ -394,14 +400,18 @@ public class Controller implements Observer{
 	}
 
 	public void removeUser(User crashed) {
+		System.out.println("sono entrato per rimuovere l'utente");
 		session.getJoined().remove(crashed);
+		view.displayUsers(session.getJoined());
 		if(session.isLeader()) {
 			nlh.removeSocket(crashed);
 		}
 	}
 
 	public void leaderElection() {
-		crashDetector.startElect();
+		if(!crashDetector.isAlreadySentElect()) {
+			crashDetector.startElect();
+		}
 	}
 
 

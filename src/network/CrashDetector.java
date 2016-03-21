@@ -10,7 +10,9 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Timer;
@@ -94,13 +96,18 @@ public class CrashDetector extends Observable{
 	}
 
 	public synchronized void increment(){
+		List<User> crashedUsers = new ArrayList<User>();
 		for(Map.Entry<User, Integer> entry : counters.entrySet() ){
 			entry.setValue(entry.getValue()+1);
 			if(entry.getValue()>NUM_FAIL_ALIVE){
+				crashedUsers.add(entry.getKey());
 				Crash crash = new Crash(entry.getKey());
 				setChanged();
 				notifyObservers(crash);
-			}
+			}	
+		}
+		for(User u : crashedUsers) {
+			removeUser(u);
 		}
 	}
 
@@ -124,18 +131,22 @@ public class CrashDetector extends Observable{
 	}
 
 	public void startElect() {
+
 		Elect newElectEvent = new Elect(session.getMyself());
 		receiverAlive.sendEvent(newElectEvent);
+		alreadySentElect = true;
 		checkForElectionConfirm = new Timer(true);
 		checkForElectionConfirm.schedule(new TimerTask()  {
 
 			@Override
 			public void run() {
+				System.out.println("sono il nuovo leader!");
 				Coordinator c = new Coordinator(session.getMyself());
 				receiverAlive.sendEvent(c); 
 
 			}
 		}, 1000);
+
 
 	}
 
@@ -181,12 +192,16 @@ class ReceiverAlive implements Runnable{
 				if(eventReceived instanceof Elect) {
 					//Nella elect c'è l'utente che vuole diventare leader
 					Elect elect = (Elect) eventReceived;
+					System.out.println(elect.getUser().getId() + ": questo è l'id di chi ha lanciato elect");
+					System.out.println(session.getMyself().getId() +": questo è l'id di chi ha ricevuto l'elect, cioè lo user attuale");
 					if(!elect.getUser().equals(session.getMyself()) && elect.getUser().getId() < session.getMyself().getId()) {
+						System.out.println("devo mandare io lo stop per bloccare l'altro");
 						//invio stop per fermare l'elezione a quell'utente
 						Stop stop = new Stop(elect.getUser());
 						sendEvent(stop);
 						if(!cd.isAlreadySentElect()) {
 							//creo e invio la nuova elezione
+							cd.setAlreadySentElect(true);
 							cd.startElect();
 						}
 					}
