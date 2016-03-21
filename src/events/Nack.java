@@ -4,20 +4,20 @@ public class Nack extends GenericEvent {
 	
 	private static final long serialVersionUID = 1L;
 
-	private short sequenceNumber;
-	private short sessionNumber;
+	private int sequenceNumber;
+	private int sessionNumber;
 	
-	public Nack(short sessionNumber, short squenceNumber) {
+	public Nack(int sessionNumber, int squenceNumber) {
 		super(EventType.NACK);
 		this.sequenceNumber=squenceNumber;
 		this.sessionNumber=sessionNumber;
 	}
 
-	public short getSequenceNumber() {
+	public int getSequenceNumber() {
 		return sequenceNumber;
 	}
 	
-	public short getSessionNumber(){
+	public int getSessionNumber(){
 		return sessionNumber;
 	}
 

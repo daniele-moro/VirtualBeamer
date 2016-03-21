@@ -36,8 +36,8 @@ import model.User;
  *
  */
 public class CrashDetector extends Observable{
-	private final static int SEND_INTERVAL = 250;
-	private final static int INCREMENT_INTERVAL = 250;
+	private final static int SEND_INTERVAL = 50000;
+	private final static int INCREMENT_INTERVAL = 50000;
 	private InetAddress group;
 	private MulticastSocket socket;
 	private final static int NUM_FAIL_ALIVE = 5;

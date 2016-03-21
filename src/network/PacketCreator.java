@@ -60,6 +60,7 @@ public class PacketCreator {
 		int packets = (int) Math.ceil(imageByteArray.length / (float)DATAGRAM_MAX_SIZE);
 		List<byte[]> packetsList = new ArrayList<byte[]>();
 		for(int i = 0; i <= packets; i++) {
+			System.out.println("Pezzo Immagine: " + i);
 			int flags = 0;
 			flags = i == 0 ? flags | SESSION_START : flags;
 			flags = (i + 1) * DATAGRAM_MAX_SIZE > imageByteArray.length ? flags | SESSION_END : flags;
