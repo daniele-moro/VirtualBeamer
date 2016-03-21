@@ -52,6 +52,7 @@ public class CrashDetector extends Observable{
 	public CrashDetector(Session session, Controller controller) {
 		this.addObserver(controller);
 		this.counters = new HashMap<User, Integer>();
+		this.session=session;
 		try {
 
 			group = InetAddress.getByName(session.getSessionIP());
@@ -178,8 +179,9 @@ class ReceiverAlive implements Runnable{
 				}
 
 				if(eventReceived instanceof Elect) {
+					//Nella elect c'è l'utente che vuole diventare leader
 					Elect elect = (Elect) eventReceived;
-					if(elect.getUser().getId() < session.getMyself().getId()) {
+					if(!elect.getUser().equals(session.getMyself()) && elect.getUser().getId() < session.getMyself().getId()) {
 						//invio stop per fermare l'elezione a quell'utente
 						Stop stop = new Stop(elect.getUser());
 						sendEvent(stop);
@@ -191,6 +193,7 @@ class ReceiverAlive implements Runnable{
 				}
 
 				if(eventReceived instanceof Stop) {
+					//Nello stop c'è l'user da stoppare
 					Stop stop = (Stop) eventReceived;
 					if(stop.getUser().equals(session.getMyself())) {
 						cd.stopElect();

@@ -78,6 +78,7 @@ public class View {
 		gui.clientToLeader();
 		//TODO: when invoked by the controller, change the GUI such that user becomes a master
 		//button NEXT and PREV appear and also users list with possibility to select new master
+		gui.presentationButtons();
 	}
 	
 	public void becomeClient(){

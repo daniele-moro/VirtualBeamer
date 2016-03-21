@@ -37,19 +37,27 @@ public class NetworkHandler {
 //		socket.joinGroup(group);
 //	}
 	
+	/**
+	 * Costruttore usato per aprire il socket da parte dei client, verso il serverSocket
+	 * @param ip
+	 * @param controller
+	 */
 	public NetworkHandler(String ip, Controller controller) {
 		System.out.println("Entrato nel Costruttore del NetworkHandler");
 		try {
+			//aspetto che il server abbia avviato il serverSocket
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			socket = new Socket(ip, Session.portLeader);
-			System.out.println("Entrato nel Costruttore del NetworkHandler");
+			
 			oos  = new ObjectOutputStream(socket.getOutputStream());
 			oos.flush();
 			ois  = new ObjectInputStream(socket.getInputStream());
-			
-			System.out.println("Entrato nel Costruttore del NetworkHandler");
-			
 			System.out.println("Ho creato oos, ois");
-			
 			
 			singleReceiver = new SingleReceiver(ois);
 			singleReceiver.addObserver(controller);
@@ -66,6 +74,13 @@ public class NetworkHandler {
 		
 	}
 	
+	/**
+	 * Costruttore usato dal serverSocket quando ha ricevuto la richiesta di apertura del socket
+	 * @param oos
+	 * @param ois
+	 * @param socket
+	 * @param controller
+	 */
 	public NetworkHandler(ObjectOutputStream oos,ObjectInputStream ois, Socket socket, Controller controller){
 		this.oos=oos;
 		this.ois=ois;
@@ -104,8 +119,9 @@ public class NetworkHandler {
 	
 	public void close(){
 		try {
-			this.socket.close();
+			System.out.println("-----------------CHIUDO IL SOCKET------------------");
 			singleReceiver.terminate();
+			this.socket.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -133,6 +149,7 @@ class SingleReceiver extends Observable implements Runnable{
 		GenericEvent event = null;
 		while(!terminate){
 			try {
+				System.out.println("----Attendo un evento----");
 				if((event = (GenericEvent) ois.readObject()) !=null){
 					System.out.println("ricevuto un evento");
 					setChanged();
@@ -142,8 +159,13 @@ class SingleReceiver extends Observable implements Runnable{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				System.out.println("HO CAPITO TUTTO!!!!!!!!!!--------------------------");
 			}
 		}
 	}

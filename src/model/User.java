@@ -6,10 +6,10 @@ public class User implements Serializable{
 
 	private static final long serialVersionUID = 1L;
 
-	public User(String name, String ip, int id) {
+	public User(String name, String ip) {
 		this.name = name;
 		this.ip = ip;
-		this.id = id;
+		this.id =  (int) (Math.random()*100);
 	}
 	
 	private String name;

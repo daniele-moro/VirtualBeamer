@@ -59,8 +59,12 @@ public class NetworkLeaderHandler{
 	}
 	
 
+	/**
+	 * Metodo per chiudere tutti i socket verso i vari client
+	 */
 	public void closeOldSockets() {
 		for(Map.Entry<User, NetworkHandler> entry : networkMap.entrySet()){
+			System.out.println("SOno il vecchio leader, chiudo il socket di: "+entry.getKey().getName());
 			entry.getValue().close();
 		}
 		connectionServer.terminate();
@@ -91,7 +95,7 @@ class ConnectionServer extends Observable implements Runnable{
 			serverSocket.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 	}
 	
@@ -125,7 +129,8 @@ class ConnectionServer extends Observable implements Runnable{
 				e.printStackTrace();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.out.println("IOEXCEPTION in serverSocket");
+				//e.printStackTrace();
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

@@ -2,7 +2,6 @@ package main;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -14,31 +13,23 @@ import java.io.ObjectInputStream;
 import java.io.StreamCorruptedException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.net.MulticastSocket;
-import java.net.SocketTimeoutException;
 
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JSplitPane;
 
 import controller.Controller;
-import events.GenericEvent;
 import events.HelloReply;
-import events.Join;
 import model.Session;
 import model.User;
-import network.NetworkHelloReceiver;
-import network.NetworkReceiver;
 import view.Gui;
 import view.SessionButton;
 import view.View;
@@ -116,7 +107,7 @@ public class Main {
 					"");
 
 			try {
-				user = new User(userName, InetAddress.getLocalHost().getHostAddress(), 0);
+				user = new User(userName, InetAddress.getLocalHost().getHostAddress());
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -350,7 +341,7 @@ class selectSessionHandler implements ActionListener
 		Session session = button.getButtonSession();
 		
 		try {
-			user = new User(userName, InetAddress.getLocalHost().getHostAddress(), 0);
+			user = new User(userName, InetAddress.getLocalHost().getHostAddress());
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
