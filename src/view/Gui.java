@@ -1,6 +1,7 @@
 package view;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -180,7 +181,7 @@ public class Gui {
 	}
 
 	public void masterFrame() {
-		frameMaster = new JFrame("Select");
+		frameMaster = new JFrame(controller.getSession().getMyself().getName());
 		frameMaster.setLocationRelativeTo(null);
 		frameMaster.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frameMaster.setLayout(new BorderLayout());
@@ -188,6 +189,7 @@ public class Gui {
 		centralPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		centralSlide = new JLabel(); 
 		currentInitSlide = new ImageIcon("src/main/leaderStart.png");
+		centralSlide.setPreferredSize(new Dimension(495,495));
 		centralSlide.setIcon(currentInitSlide);
 		centralSlide.setVisible(true);
 		bottomInitPanel = new JPanel();
@@ -225,7 +227,7 @@ public class Gui {
 	}
 	
 	public void masterFrame(int actualSlide) {
-		frameMaster = new JFrame("Select");
+		frameMaster = new JFrame(controller.getSession().getMyself().getName());
 		frameMaster.setLocationRelativeTo(null);
 		frameMaster.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frameMaster.setLayout(new BorderLayout());
@@ -233,6 +235,7 @@ public class Gui {
 		centralPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		centralSlide = new JLabel(); 
 		currentInitSlide = new ImageIcon(controller.getSession().getSlides().get(actualSlide));
+		centralSlide.setPreferredSize(new Dimension(495,495));
 		centralSlide.setIcon(currentInitSlide);
 		centralSlide.setVisible(true);
 		bottomInitPanel = new JPanel();
@@ -281,7 +284,7 @@ public class Gui {
 	}
 
 	public void clientFrame() {
-		frameClient = new JFrame("Select");
+		frameClient = new JFrame("Client Frame");
 		frameClient.setLocationRelativeTo(null);
 		frameClient.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frameClient.setLayout(new BorderLayout());
@@ -289,6 +292,7 @@ public class Gui {
 		centralPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		centralSlide = new JLabel(); 
 		currentInitSlide = new ImageIcon("src/main/clientStart.png");
+		centralSlide.setPreferredSize(new Dimension(495, 495));
 		centralSlide.setIcon(currentInitSlide);
 		centralSlide.setVisible(true);
 
@@ -315,6 +319,15 @@ public class Gui {
 		//TODO: change the current to the next/previous one
 		//The View call this method passing the correct new icon to visualize
 		centralSlide.setIcon(icon);
+		centralSlide.setPreferredSize(new Dimension(700, 495));
+		
+		if(!controller.getSession().getMyself().equals(controller.getSession().getLeader())){
+			frameClient.setTitle(controller.getSession().getMyself().getName());
+			frameClient.pack();
+		}
+		else{
+			frameMaster.pack();
+		}
 
 	}
 	
@@ -337,9 +350,7 @@ public class Gui {
 		PrevSlideHandler psh = new PrevSlideHandler();
 		prevSlide.addActionListener(psh);
 		
-		
 		centralPanel.remove(bottomInitPanel);
-		
 		centralPanel.setBottomComponent(bottomPanel);
 		centralPanel.validate();
 		frameMaster.pack();
@@ -454,6 +465,8 @@ public class Gui {
 		public void actionPerformed(ActionEvent event)
 		{
 			//TODO: client press on LEAVE and the user is disconnected
+			System.out.println("I've clicked on LEAVE button...");
+			System.exit(0);
 
 		}
 	}//End of class leaveHandler
