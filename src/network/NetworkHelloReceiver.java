@@ -99,6 +99,9 @@ class HelloReceiver extends Observable implements Runnable{
 			}
 
 		}
+		if(run==false){
+			socket.close();
+		}
 
 	}
 }

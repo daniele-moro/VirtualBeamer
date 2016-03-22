@@ -1,16 +1,14 @@
 package view;
 
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 import controller.Controller;
-import javafx.scene.image.Image;
 import model.Session;
 import model.User;
 
@@ -57,7 +55,7 @@ public class View {
 		//display new slide, can be the next one or the previous one
 		
 		//TODO: I have the BufferedImage, I have to resize it to fit the JPanel
-		java.awt.Image resizedImage = slideToShow.getScaledInstance(700, 495, BufferedImage.TYPE_INT_ARGB);
+		Image resizedImage = slideToShow.getScaledInstance(700, 495, BufferedImage.TYPE_INT_ARGB);
 
 		//changeSlide = new ImageIcon(slideToShow);
 		changeSlide = new ImageIcon(resizedImage);

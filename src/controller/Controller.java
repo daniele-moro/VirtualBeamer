@@ -158,9 +158,10 @@ public class Controller implements Observer{
 			List<User> receivers = new ArrayList<User>();
 			receivers.add(evSST.getReceiver());
 			MulticastDownload sendSlides = new MulticastDownload(session, session.getSlides().size(), true, receivers);
-			for(BufferedImage elem : session.getSlides()){
-				sendSlides.sendSlide(elem);
-			}
+//			for(BufferedImage elem : session.getSlides()){
+//				sendSlides.sendSlide(elem);
+//			}
+			sendSlides.sendSlides(session.getSlides());
 			
 		}break;
 		case NACK:
@@ -196,44 +197,29 @@ public class Controller implements Observer{
 				nlh.sendToUsers(joinEv);
 				//Aggiungiamo l'utente nel model locale
 				session.addJoinedUser(rqtj.getJoiner());
-				//System.out.println(crashDetector);
-//				System.out.println(rqtj);
-//				System.out.println(rqtj.getJoiner());
 				crashDetector.addUser(rqtj.getJoiner());
+				
+				if(session.isSessionStarted()){
+					System.out.println("Sessione già iniziata");
+					//La sessione è già partita, quindi c'è una join a metà di una session
+					//Devo inviare la start_session all'utente che ha richiesto la join e dire ad un utente di mandare le slide
+					StartSession evSt = new StartSession(session.getSlides().size());
+					SendSlideTo evSST = new SendSlideTo(rqtj.getJoiner());
+					nextSender = findNextSender(nextSender);
+					nlh.sendToUser(session.getJoined().get(nextSender), evSST);
+					try {
+						Thread.sleep(200);
+					} catch (InterruptedException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					nlh.sendToUser(rqtj.getJoiner(), evSt);
+					nextSender++;
+					//nextSender=(nextSender+1)%session.getJoined().size();
+				}
+				
 			}
 			System.out.println("SOno nel request To JOIN, il nuovo utente è "+rqtj.getJoiner().getName());
-			
-			if(session.isSessionStarted()){
-				System.out.println("Sessione già iniziata");
-				//La sessione è già partita, quindi c'è una join a metà di una session
-				//Devo inviare la start_session all'utente che ha richiesto la join e dire ad un utente di mandare le slide
-				StartSession evSt = new StartSession(session.getSlides().size());
-				//
-				SendSlideTo evSST = new SendSlideTo(rqtj.getJoiner());
-//				if(nextSender > session.getJoined().size() || 
-//						session.getJoined().get(nextSender)){
-//					nextSender=(nextSender+1) % session.getJoined().size();
-//				}
-//				if(session.getJoined().get(nextSender).equals(session.getLeader())){
-//					
-//				}
-//				nlh.sendToUser(session.getJoined().get(nextSender), evSST);
-//				try {
-//					Thread.sleep(200);
-//				} catch (InterruptedException e1) {
-//					// TODO Auto-generated catch block
-//					e1.printStackTrace();
-//				}
-				
-				nlh.sendToUser(rqtj.getJoiner(), evSt);
-				List<User> receivers = new ArrayList<User>();
-				receivers.add(rqtj.getJoiner());
-				MulticastDownload sendSlides = new MulticastDownload(session, session.getSlides().size(), true, receivers);
-				for(BufferedImage elem : session.getSlides()){
-					sendSlides.sendSlide(elem);
-				}
-				nextSender=(nextSender+1)%session.getJoined().size();
-			}
 			//Aggiorno la view con gli utenti
 			view.displayUsers(session.getJoined());
 			break;
@@ -405,9 +391,10 @@ public class Controller implements Observer{
 		List<User> receivers = new ArrayList(session.getJoined());
 		receivers.remove(session.getLeader());
 		MulticastDownload sendSlides = new MulticastDownload(session, session.getSlides().size(), true, receivers);
-		for(BufferedImage elem : session.getSlides()){
-			sendSlides.sendSlide(elem);
-		}
+//		for(BufferedImage elem : session.getSlides()){
+//			sendSlides.sendSlide(elem);
+//		}
+		sendSlides.sendSlides(session.getSlides());
 		view.presentationButtons();
 		session.setSessionStarted(true);
 		this.goTo(0);
@@ -500,6 +487,29 @@ public class Controller implements Observer{
 		networkHandler.send(rqTJ);
 
 
+	}
+	
+	private int findNextSender(int nextSenderIn) {
+		if(!session.getJoined().get(nextSenderIn).equals(session.getLeader())
+				&& nextSender < session.getJoined().size() -1) {
+			return nextSenderIn;
+		}
+		for(int i = nextSender + 1; i < session.getJoined().size()-1; i++) {
+			if(!session.getJoined().get(i).equals(session.getLeader())) {
+				return i; 
+			}
+		}
+		for(int i = 0; i < nextSender; i++) {
+			if(!session.getJoined().get(i).equals(session.getLeader())) {
+				return i; 
+			}
+		}
+		for(int i = 0; i < session.getJoined().size() - 1; i++) {
+			if(session.getJoined().get(i).equals(session.getLeader())) {
+				return i; 
+			}
+		}
+		return 0; 
 	}
 
 
