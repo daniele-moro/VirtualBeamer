@@ -161,7 +161,8 @@ public class Controller implements Observer{
 //			for(BufferedImage elem : session.getSlides()){
 //				sendSlides.sendSlide(elem);
 //			}
-			sendSlides.sendSlides(session.getSlides());
+			sendSlides.generatePackets(session.getSlides());
+			sendSlides.sendSlides();
 			
 		}break;
 		case NACK:
@@ -385,16 +386,18 @@ public class Controller implements Observer{
 
 	public void startSession(){
 		//invio l'evento di start, che segnala quante slide ci sono da visualizzare
-		StartSession evStart = new StartSession(session.getSlides().size());
-		nlh.sendToUsers(evStart);
+		
 		//Invio le slide
-		List<User> receivers = new ArrayList(session.getJoined());
+		List<User> receivers = new ArrayList<User>(session.getJoined());
 		receivers.remove(session.getLeader());
 		MulticastDownload sendSlides = new MulticastDownload(session, session.getSlides().size(), true, receivers);
+		sendSlides.generatePackets(session.getSlides());
+		StartSession evStart = new StartSession(session.getSlides().size());
+		nlh.sendToUsers(evStart);
 //		for(BufferedImage elem : session.getSlides()){
 //			sendSlides.sendSlide(elem);
 //		}
-		sendSlides.sendSlides(session.getSlides());
+		sendSlides.sendSlides();
 		view.presentationButtons();
 		session.setSessionStarted(true);
 		this.goTo(0);

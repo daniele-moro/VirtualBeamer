@@ -103,13 +103,12 @@ public class MulticastDownload {
 	public int getNumSlide() {
 		return numSlide;
 	}
-
-
-	public boolean sendSlides(List<BufferedImage> images){
+	
+	public void generatePackets(List<BufferedImage> images){
 		List<byte[]> packets;
 		if(numSlide!=images.size()){
 			System.out.println("Errore nel numero di slide passate");
-			return false;
+			return;
 		}
 		if(numSlide>0){
 			try {
@@ -117,7 +116,9 @@ public class MulticastDownload {
 				//Inserisco le immagini in memoria covnertite in pacchetti pronti da inviare
 				System.out.println("inserisco le immagini spacchettate in memoria");
 				for(BufferedImage elem: images){
-					packets = PacketCreator.createPackets(elem, sessionNumber);
+					
+						packets = PacketCreator.createPackets(elem, sessionNumber);
+					
 					
 					sentPacket.put(sessionNumber, new HashMap<Integer, byte[]>());
 					
@@ -127,7 +128,37 @@ public class MulticastDownload {
 					}
 					sessionNumber++;
 				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
 
+
+	public boolean sendSlides(){
+//		List<byte[]> packets;
+//		if(numSlide!=images.size()){
+//			System.out.println("Errore nel numero di slide passate");
+//			return false;
+//		}
+//		if(numSlide>0){
+//			try {
+//				sentPacket = new HashMap<Integer, Map<Integer, byte[]>>();
+//				//Inserisco le immagini in memoria covnertite in pacchetti pronti da inviare
+//				System.out.println("inserisco le immagini spacchettate in memoria");
+//				for(BufferedImage elem: images){
+//					packets = PacketCreator.createPackets(elem, sessionNumber);
+//					
+//					sentPacket.put(sessionNumber, new HashMap<Integer, byte[]>());
+//					
+//					for(int i =0; i<packets.size(); i++){
+//						System.out.println("SessionNumber: "+sessionNumber + " SequenceNum: "+ i + " "+ packets.get(i));
+//						sentPacket.get(sessionNumber).put(i,packets.get(i));
+//					}
+//					sessionNumber++;
+//				}
+if(sentPacket.size()==numSlide){
 				//Invio i pacchetti
 				for(int i = 0; i<numSlide; i++){
 					for(Map.Entry<Integer, byte[]> entry : sentPacket.get(i).entrySet() ){
@@ -156,15 +187,16 @@ public class MulticastDownload {
 				receiverr.setRun(false);
 				numSlide=0;
 				return false;
-
-
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return true;
-			}
-		}
-		return false;
+}
+return false;
+//
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//				return true;
+//			}
+//		}
+//		return false;
 
 
 	}
@@ -309,6 +341,7 @@ class Receiverr extends Observable implements Runnable{
 	private MulticastDownload md;
 	private TimerReceiveSlide trs;
 	private Timer timer;
+	private int numSlide;
 
 	protected Map<Integer, List<SlidePartData>> getReceivedPacket() {
 		return receivedPacket;
@@ -326,6 +359,7 @@ class Receiverr extends Observable implements Runnable{
 	 * @param md
 	 */
 	public Receiverr(InetAddress group, MulticastSocket socket, boolean sender, MulticastDownload md){
+		this.numSlide=md.getNumSlide();
 		this.group=group;
 		this.socket = socket;
 		this.receivedPacket = new HashMap<Integer, List<SlidePartData>>();
@@ -333,7 +367,7 @@ class Receiverr extends Observable implements Runnable{
 		this.md=md;
 		this.run=true;
 		if(!sender) {
-			for(int i = 0; i < md.getNumSlide(); i++) {
+			for(int i = 0; i < numSlide; i++) {
 				receivedPacket.put(i, new ArrayList<SlidePartData>());
 			}
 //			trs = new TimerReceiveSlide(this);
@@ -512,7 +546,7 @@ class Receiverr extends Observable implements Runnable{
 						
 						
 						//Controllare se ho finito una slide
-						while(k < md.getNumSlide() && receivedPacket.get(k).size()>0 && !receivedPacket.get(k).contains(null)){
+						while(k < numSlide && receivedPacket.get(k).size()>0 && !receivedPacket.get(k).contains(null)){
 							System.out.println("FINITO UNA SLIDE?");
 							//if(!receivedPacket.get(k).contains(null)){
 							System.out.println("Una slide è finita!!!  k: "+ k);
