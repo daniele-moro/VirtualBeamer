@@ -49,7 +49,16 @@ public class MulticastDownload {
 	private Receiverr receiverr; 
 
 	private boolean sentAll;
+	
+	private BufferedImage img;
 
+	/**
+	 * Costruttore della classe, bisogna passargli l'istanza della sessione (quindi il model), il numero totale da inviare
+	 *  e un booleano che segnala se l'utente che istanzia la classe è chi spedisce o meno.
+	 * @param session
+	 * @param numslide
+	 * @param sender
+	 */
 	public MulticastDownload(Session session, int numslide, boolean sender){
 		try {
 			group = InetAddress.getByName(session.getSessionIP());
@@ -96,7 +105,11 @@ public class MulticastDownload {
 
 
 	/**
-	 * Metodo per spedire le immagini in multicast
+	 * Metodo per spedire le immagini in multicast, genera i pacchetti a partire da una BufferedImage (tramite il metodo createPackets di PacketCreator)
+	 * e li spedisce in multicast usando il metodo sendPacket, incrementa il sessionNumber che rappresenta l'id dell'immagine
+	 * se sono state spedite tutte le immagini alla si mette in attesa che tutti gli ACK dai client arrivino correttamente
+	 * Il metodo quindi si blocca solo nel caso in cui stiamo inviando l'ultima immagine
+	 * Il metodo torna true se l'immagine è stata spedita e ci sono altre immagini da spedire, torna false quando tutte le immagini sono state spedite
 	 * @param bufferedImage
 	 * @return True: la slide è stat spedita, False: la slide non è stata spedita perchè sono già state spedite tutte oppure perchè c'è stato un errore
 	 */
@@ -110,7 +123,10 @@ public class MulticastDownload {
 				}
 				for(byte[] elem: packets) {
 					System.out.println("Invio pacchetto session: " + (int) elem[1] + " Sequence: " + (int) elem[5]);
+					//Aggiungo il paccchetto alla hashMap
 					sentPacket.get(sessionNumber).put((int) elem[5], elem);
+					//Spedisco il pacchetto selezionando il sequence e il sessionNumber corrispondendi
+					//al pacchetto appena aggiunto alla hashMap
 					this.sendPacket((int)elem[1], (int)elem[5]);
 
 					//					DatagramPacket  dPacket = new DatagramPacket(elem, elem.length, group, Session.portSlide);
@@ -145,6 +161,12 @@ public class MulticastDownload {
 		return false;
 	}
 
+	/**
+	 * Metodo per spedire un pacchetto contenuto nella HashMap, viene passato il sessionNumber e il sequenceNumber
+	 * del pacchetto da spedire
+	 * @param sessionNumber
+	 * @param sequenceNumber
+	 */
 	void sendPacket(int sessionNumber, int sequenceNumber){
 		try {
 
@@ -161,14 +183,14 @@ public class MulticastDownload {
 		}
 	}
 
-	private BufferedImage img;
 	/**
-	 * Metodo bloccante, aspetta la ricezione di una slide
+	 * Metodo bloccante, aspetta la ricezione di una slide, la ricezione viene effettuata in ordine a seconda del sessionNumber
+	 * Il metodo quindi si mette in Wait finchè il thread di ricezione delle immagini non effettua la notifyAll per svegliarlo 
+	 * (il quale prima setta l'immagine appena letta)
 	 * @return
 	 */
 	public synchronized BufferedImage receive(){
 		if(numSlide>0){
-			img=null;
 			try {
 				while(img==null) {
 					this.wait();
@@ -186,7 +208,9 @@ public class MulticastDownload {
 				//Stoppo il thread in ricezione
 				receiverr.setRun(false);
 			}
-			return img;
+			BufferedImage img2 = img;
+			img=null;
+			return img2;
 		}else {
 			return null;
 		}
@@ -194,7 +218,6 @@ public class MulticastDownload {
 	}
 
 	synchronized void setImg(BufferedImage img){
-
 		this.img=img;
 
 	}
@@ -206,7 +229,12 @@ public class MulticastDownload {
 
 
 
-
+/**
+ *  Classe che implementa il thread di ricezione dei messaggi nel gruppo di multicast per l'invio delle slide
+ *  quando viene avviato il thread correlato, si mette in attesa di messaggi e li interpreata eseguendo le azioni correlate
+ * @author m-daniele
+ *
+ */
 class Receiverr extends Observable implements Runnable{
 	private InetAddress group;
 	private MulticastSocket socket;
@@ -222,6 +250,14 @@ class Receiverr extends Observable implements Runnable{
 
 	private Map<Integer,  List<SlidePartData>> receivedPacket;
 
+	/**
+	 * Costruttore della classe, si occupa di istanziare tutti gli oggetti necessari al thread.
+	 *  se l'utente non è il sender dovrò istanziare la struttura dati per memorizzare i dati ricevuti
+	 * @param group
+	 * @param socket
+	 * @param sender
+	 * @param md
+	 */
 	public Receiverr(InetAddress group, MulticastSocket socket, boolean sender, MulticastDownload md){
 		this.group=group;
 		this.socket = socket;
@@ -246,6 +282,10 @@ class Receiverr extends Observable implements Runnable{
 		this.run=run;
 	}
 
+	/**
+	 * Metodo che si occupa di serializzare e inviare in multicast un qualsiasi evento
+	 * @param event
+	 */
 	public void sendEvent(GenericEvent event){
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos;
@@ -264,6 +304,13 @@ class Receiverr extends Observable implements Runnable{
 	}
 
 
+	/**
+	 * Metodo che viene avviato all'avvio del thread, si mette in ascolto di tutti i messaggi che passano nel gruppo di multicast
+	 * Ricevuto un messaggio tenta di deserializzarlo(perchè potrebbe essere un evento, a cui è interessato solo il sender (gli eventi sono NACK o ACK)), 
+	 * in questo caso effettua ciò che è correlato all'evento.
+	 * Se invece la deserializzazione fallisce, allora sto ricevendo un pezzo di immagine e quindi (se non sono il sender) la inserisco nella struttura dati dei dati ricevuti
+	 * nel caso in cui abbia ricevuto un immagine completa allora posso notificare la classe superiore (in particolare il metodo receive) che ho ricevuto un immagine
+	 */
 	public void run(){
 		//Valutare se serve usare il timeout sul socket.receive (settando il setSoTimeout di socket)
 		byte[] buf = new byte[100000];
@@ -291,14 +338,17 @@ class Receiverr extends Observable implements Runnable{
 					System.out.println("Evento Ricevuto: " + eventReceived.toString());
 
 					//qui ricevo l'evento di fine o gli ack e nack
+					
 					if(sender && eventReceived instanceof Nack){
+						//sono il sender e ho ricevuto un Nack devo rispedire indietro il pacchetto richiesto
 						System.out.println("Ho ricevuto un NACK");
 						Nack ev = (Nack) eventReceived;
-						//ho ricevuto un Nack devo rispedire indietro il pacchetto richiesto
 						md.sendPacket(ev.getSessionNumber(), ev.getSequenceNumber());
 						System.out.println("Ho spedito il pacchetto NACKATO");
 					}
 					if(sender && eventReceived instanceof Ack){
+						//Sono il sender e ho ricevuto un ACK, devo aggiungerlo agli utenti che mi hanno ackato
+						//e verificare se tutti gli utenti mi hanno inviato l'ACK
 						System.out.println("HO RICEVUTO UN ACK");
 						Ack ackEv = (Ack) eventReceived;
 						//devo veder se ho ricevuto  l'ack da tutti
