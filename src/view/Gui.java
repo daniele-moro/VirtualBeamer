@@ -337,7 +337,9 @@ public class Gui {
 		PrevSlideHandler psh = new PrevSlideHandler();
 		prevSlide.addActionListener(psh);
 		
+		
 		centralPanel.remove(bottomInitPanel);
+		
 		centralPanel.setBottomComponent(bottomPanel);
 		centralPanel.validate();
 		frameMaster.pack();

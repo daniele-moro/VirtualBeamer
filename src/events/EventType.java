@@ -19,5 +19,6 @@ public enum EventType {
 	STOP, 
 	COORDINATOR,
 	END_SLIDES,
-	START_SESSION;
+	START_SESSION,
+	SEND_SLIDE_TO;
 }

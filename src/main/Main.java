@@ -277,6 +277,7 @@ public class Main {
 				try{
 				is = new ObjectInputStream(new BufferedInputStream(byteStream));
 				eventReceived=(HelloReply) is.readObject();
+				eventReceived.getSession().setSessionStarted(false);
 				sessionList.add(eventReceived.getSession());
 				}catch(StreamCorruptedException e){
 					System.out.println("HELLO ricevuto da me stesso");

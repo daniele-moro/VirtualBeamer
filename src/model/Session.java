@@ -30,6 +30,18 @@ public class Session extends Observable implements Serializable{
 	private String sessionIP;
 	private transient List<BufferedImage> slides;
 	
+	private transient boolean sessionStarted;
+	
+
+	public boolean isSessionStarted() {
+		return sessionStarted;
+	}
+
+
+	public void setSessionStarted(boolean sessionStarted) {
+		this.sessionStarted = sessionStarted;
+	}
+
 
 	public Session(User leader, User sessionCreator, User myself, String path, String sessionName, String sessionIP) {
 		this.sessionCreator=sessionCreator;
@@ -38,11 +50,13 @@ public class Session extends Observable implements Serializable{
 		this.setSessionName(sessionName);
 		this.joined = new ArrayList<User>();
 		joined.add(leader);
-		this.actualSlide = -1;
+		this.actualSlide = 0;
 		this.path = path;
 		this.sessionIP=sessionIP;
 		this.slides= new ArrayList<BufferedImage>();
+		this.sessionStarted=false;
 	}
+	
 	
 	public User getLeader() {
 		return leader;

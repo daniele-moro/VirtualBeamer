@@ -58,6 +58,10 @@ public class NetworkLeaderHandler{
 		}
 	}
 	
+	public void sendToUser(User user, GenericEvent event){
+		networkMap.get(user).send(event);
+	}
+	
 
 	/**
 	 * Metodo per chiudere tutti i socket verso i vari client

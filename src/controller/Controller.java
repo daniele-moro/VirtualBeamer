@@ -16,6 +16,7 @@ import events.Join;
 import events.Nack;
 import events.NewLeader;
 import events.RequestToJoin;
+import events.SendSlideTo;
 import events.SlidePartData;
 import events.StartSession;
 import model.Session;
@@ -50,7 +51,8 @@ public class Controller implements Observer{
 
 
 	private Map<GenericEvent, List<User>> ackedEvent;
-
+	
+	private int nextSender;
 
 	private List<SlidePartData> tempArray;
 	private int currentSessionNumber=-1;
@@ -64,6 +66,7 @@ public class Controller implements Observer{
 	}
 
 	public Controller(Session session, View view){
+		this.nextSender=1;
 		this.session=session;
 		this.view= view;
 		this.crashDetector = new CrashDetector(session, this);
@@ -82,6 +85,7 @@ public class Controller implements Observer{
 
 
 	public Controller(Session session, Gui gui){
+		this.nextSender=1;
 		this.session=session;
 		this.view= new View(session, this, gui);
 		this.crashDetector = new CrashDetector(session, this);
@@ -148,6 +152,17 @@ public class Controller implements Observer{
 
 			}
 			break;
+			
+		case SEND_SLIDE_TO:{
+			SendSlideTo evSST = (SendSlideTo) arg;
+			List<User> receivers = new ArrayList<User>();
+			receivers.add(evSST.getReceiver());
+			MulticastDownload sendSlides = new MulticastDownload(session, session.getSlides().size(), true, receivers);
+			for(BufferedImage elem : session.getSlides()){
+				sendSlides.sendSlide(elem);
+			}
+			
+		}break;
 		case NACK:
 			if(session.isLeader()){
 				slideSender.sendMissingPacket(((Nack) arg).getSequenceNumber());
@@ -155,9 +170,9 @@ public class Controller implements Observer{
 			break;
 
 		case START_SESSION:
-			//inizia la sessione, devo ricevere le slide
+			//inizia la sessione, devo ricevere le slide (solo sul client)
 			StartSession evStart = (StartSession) arg;
-			MulticastDownload slReceiver = new MulticastDownload(session,evStart.getNumSlide(), false);
+			MulticastDownload slReceiver = new MulticastDownload(session,evStart.getNumSlide(), false, null);
 			//ricevo le slide
 			while(true){
 				BufferedImage imgRec = slReceiver.receive();
@@ -167,6 +182,8 @@ public class Controller implements Observer{
 					System.out.println("--------------------INserisco una slide------------" + session.getSlides().size());
 				} else break;
 			}
+			session.setSessionStarted(true);
+			view.changeSlide(session.getSlides().get(session.getActualSlide()));
 			break;
 
 		case REQUEST_TO_JOIN:
@@ -179,10 +196,43 @@ public class Controller implements Observer{
 				nlh.sendToUsers(joinEv);
 				//Aggiungiamo l'utente nel model locale
 				session.addJoinedUser(rqtj.getJoiner());
-				System.out.println(crashDetector);
-				System.out.println(rqtj);
-				System.out.println(rqtj.getJoiner());
+				//System.out.println(crashDetector);
+//				System.out.println(rqtj);
+//				System.out.println(rqtj.getJoiner());
 				crashDetector.addUser(rqtj.getJoiner());
+			}
+			System.out.println("SOno nel request To JOIN, il nuovo utente è "+rqtj.getJoiner().getName());
+			
+			if(session.isSessionStarted()){
+				System.out.println("Sessione già iniziata");
+				//La sessione è già partita, quindi c'è una join a metà di una session
+				//Devo inviare la start_session all'utente che ha richiesto la join e dire ad un utente di mandare le slide
+				StartSession evSt = new StartSession(session.getSlides().size());
+				//
+				SendSlideTo evSST = new SendSlideTo(rqtj.getJoiner());
+//				if(nextSender > session.getJoined().size() || 
+//						session.getJoined().get(nextSender)){
+//					nextSender=(nextSender+1) % session.getJoined().size();
+//				}
+//				if(session.getJoined().get(nextSender).equals(session.getLeader())){
+//					
+//				}
+//				nlh.sendToUser(session.getJoined().get(nextSender), evSST);
+//				try {
+//					Thread.sleep(200);
+//				} catch (InterruptedException e1) {
+//					// TODO Auto-generated catch block
+//					e1.printStackTrace();
+//				}
+				
+				nlh.sendToUser(rqtj.getJoiner(), evSt);
+				List<User> receivers = new ArrayList<User>();
+				receivers.add(rqtj.getJoiner());
+				MulticastDownload sendSlides = new MulticastDownload(session, session.getSlides().size(), true, receivers);
+				for(BufferedImage elem : session.getSlides()){
+					sendSlides.sendSlide(elem);
+				}
+				nextSender=(nextSender+1)%session.getJoined().size();
 			}
 			//Aggiorno la view con gli utenti
 			view.displayUsers(session.getJoined());
@@ -233,6 +283,12 @@ public class Controller implements Observer{
 				//ora devo inizializzare tutti i socket che verranno aperti dagli altri client
 				System.out.println("-------APERTURA SOCKET VERSO TUTTI GLI ALTRI CLIENT-------");
 				nlh = new NetworkLeaderHandler(this);
+				try {
+					networkHelloReceiver= new NetworkHelloReceiver(session);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 
 			} else {
 				//Non sono io il nuovo leader, ma sono un semplice client che
@@ -346,11 +402,14 @@ public class Controller implements Observer{
 		StartSession evStart = new StartSession(session.getSlides().size());
 		nlh.sendToUsers(evStart);
 		//Invio le slide
-		MulticastDownload sendSlides = new MulticastDownload(session, session.getSlides().size(), true);
+		List<User> receivers = new ArrayList(session.getJoined());
+		receivers.remove(session.getLeader());
+		MulticastDownload sendSlides = new MulticastDownload(session, session.getSlides().size(), true, receivers);
 		for(BufferedImage elem : session.getSlides()){
 			sendSlides.sendSlide(elem);
 		}
 		view.presentationButtons();
+		session.setSessionStarted(true);
 		this.goTo(0);
 	}
 
@@ -402,6 +461,8 @@ public class Controller implements Observer{
 			session.setLeader(user);
 			nlh.closeOldSockets();
 			nlh = null;
+			networkHelloReceiver.stopReceiving();
+			networkHelloReceiver=null;
 
 			//Ora non sono più leader, devo aprire un socket verso il New Leader
 			networkHandler = new NetworkHandler(session.getLeader().getIp(), this);

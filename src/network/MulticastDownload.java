@@ -42,8 +42,8 @@ public class MulticastDownload {
 
 	private int sessionNumber;
 	private Map<Integer, Map<Integer, byte[]>> sentPacket;
-	Session session;
-	List<User> ackedUsers;
+	private Session session;
+	//List<User> ackedUsers;
 	private int numSlide;
 
 	private Receiverr receiverr; 
@@ -51,6 +51,8 @@ public class MulticastDownload {
 	private boolean sentAll;
 	
 	private BufferedImage img;
+	
+	List<User> notAckedUsers;
 
 	/**
 	 * Costruttore della classe, bisogna passargli l'istanza della sessione (quindi il model), il numero totale da inviare
@@ -59,18 +61,17 @@ public class MulticastDownload {
 	 * @param numslide
 	 * @param sender
 	 */
-	public MulticastDownload(Session session, int numslide, boolean sender){
+	public MulticastDownload(Session session, int numslide, boolean sender, List<User> receivers){
 		try {
 			group = InetAddress.getByName(session.getSessionIP());
 			socket = new MulticastSocket(Session.portSlide);
 			socket.joinGroup(group);
-
+			this.notAckedUsers = receivers;
 			this.sentAll=false;
 			this.sentPacket = new HashMap<Integer, Map<Integer, byte[]>>();
 			this.numSlide=numslide;
 			this.sessionNumber=0;
 			this.session=session;
-			this.ackedUsers=new ArrayList<User>();
 
 			//genero il thread per ricevere i pacchetti (ACK, NACK, Parti di slide)
 			receiverr = new Receiverr(group,socket,sender, this);
@@ -325,8 +326,9 @@ class Receiverr extends Observable implements Runnable{
 			e1.printStackTrace();
 		}
 		while(run){
+			System.out.println("RUN: " + run);
 			try {
-				System.out.println("ATTENDO RICEZIONE PACCHETTO (ACK, NACK o IMAGE)");
+				System.out.println("ATTENDO RICEZIONE PACCHETTO (ACK, NACK o IMAGE) 35463746374-------------------------------------");
 				socket.receive(recv);
 				System.out.println("Port:" + recv.getPort() + "Address: " + recv.getAddress() + "SocketAddress: " + recv.getSocketAddress());
 				GenericEvent eventReceived = null;
@@ -352,10 +354,11 @@ class Receiverr extends Observable implements Runnable{
 						System.out.println("HO RICEVUTO UN ACK");
 						Ack ackEv = (Ack) eventReceived;
 						//devo veder se ho ricevuto  l'ack da tutti
-						if(!md.ackedUsers.contains(ackEv.getUser())){
-							md.ackedUsers.add(ackEv.getUser());
+						
+						if(md.notAckedUsers.contains(ackEv.getUser())){
+							md.notAckedUsers.remove(ackEv.getUser());
 						}
-						if(md.ackedUsers.size() == md.session.getJoined().size()-1){
+						if(md.notAckedUsers.isEmpty()){
 							//Ho ricevuto l'ack da tutti, ho finito la spedizione.
 							System.out.println("Ho ricevuto l'ACK da tutti!!");
 							md.sentAll();
@@ -420,10 +423,10 @@ class Receiverr extends Observable implements Runnable{
 							}
 						}
 						//Controllare se ho finito una slide
-						if(receivedPacket.containsKey(k)){
+						if(receivedPacket.get(k).size()>0){
 							System.out.println("FINITO UNA SLIDE?");
 							if(!receivedPacket.get(k).contains(null)){
-								System.out.println("Una slide è finita!!!");
+								System.out.println("Una slide è finita!!!  k: "+ k);
 								//Costruisco l'immagine e la aggiungo alla session
 								byte[] imageData = new byte[((receivedPacket.get(k).size()-1) * receivedPacket.get(k).get(0).maxPacketSize) + receivedPacket.get(k).get(receivedPacket.get(k).size()-1).data.length];
 								for(SlidePartData part : receivedPacket.get(k)){
