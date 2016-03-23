@@ -52,7 +52,7 @@ public class NetworkHandler {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			socket = new Socket(ip, Session.portLeader);
+			socket = new Socket(ip, controller.getSession().getPortLeader());
 			
 			oos  = new ObjectOutputStream(socket.getOutputStream());
 			oos.flush();

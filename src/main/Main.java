@@ -148,25 +148,23 @@ public class Main {
 			for(int i=0; i<selectedFile.length; i++){
 				try {
 					BufferedImage im = ImageIO.read(selectedFile[i]);
-					System.out.println("@@@@@@@@@”" + im);
 
-					//Gatto conversion start
-					ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
-					ImageIO.write(im, "jpg", baos1);
-					byte[] bytes1 = baos1.toByteArray();
-					System.out.println("Before conversion: " + bytes1.length);
+					//Codice per vedere la dimensione dell'immagine originale
+//					ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+//					ImageIO.write(im, "jpg", baos1);
+//					byte[] bytes1 = baos1.toByteArray();
+//					System.out.println("Before conversion: " + bytes1.length);
 					
 					Image convertedImage = im.getScaledInstance(700, 495, BufferedImage.TYPE_INT_ARGB);
 					im = new BufferedImage(700, 495, BufferedImage.TYPE_INT_ARGB);
 					im.getGraphics().drawImage(convertedImage, 0, 0, null);
 
-					ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
-					ImageIO.write(im, "jpg", baos2);
-					byte[] bytes2 = baos2.toByteArray();
-					System.out.println("After conversion: " + bytes2.length);
-					//Gattto conversion end
-							
-					System.out.println("Stampa immagine: " + im);
+					//Codice pre vedere la dimensione dell'immagine convertita
+//					ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
+//					ImageIO.write(im, "jpg", baos2);
+//					byte[] bytes2 = baos2.toByteArray();
+//					System.out.println("After conversion: " + bytes2.length);
+					
 					session.addSlide(im);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block

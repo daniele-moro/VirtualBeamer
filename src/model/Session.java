@@ -15,7 +15,7 @@ public class Session extends Observable implements Serializable{
 	public final static int port = 6789;
 	public final static String ipHello ="228.0.0.1";
 	public final static int portHello = 6790;
-	public final static int portLeader = 6791;
+	//public final static int portLeader = 6791;
 	public final static int portSlide = 6792;
 	
 
@@ -25,6 +25,9 @@ public class Session extends Observable implements Serializable{
 	private transient User myself;
 	private String sessionName;
 	private List<User> joined;
+	
+	//private List<User> potentialSender;
+	
 	private int actualSlide;
 	private String path;
 	private String sessionIP;
@@ -32,7 +35,7 @@ public class Session extends Observable implements Serializable{
 	
 	private transient boolean sessionStarted;
 	
-	//private int portLeader;
+	private int portLeader;
 
 	public boolean isSessionStarted() {
 		return sessionStarted;
@@ -42,10 +45,14 @@ public class Session extends Observable implements Serializable{
 	public void setSessionStarted(boolean sessionStarted) {
 		this.sessionStarted = sessionStarted;
 	}
+	
+	public int getPortLeader(){
+		return this.portLeader;
+	}
 
 
 	public Session(User leader, User sessionCreator, User myself, String path, String sessionName, String sessionIP) {
-		//this.portLeader = (int)(Math.random()*16382) + 49152; //genero una porta random per il download delle immagini
+		this.portLeader = (int)(Math.random()*16382) + 49152; //genero una porta random per il download delle immagini
 		this.sessionCreator=sessionCreator;
 		this.myself=myself;
 		this.leader = leader;

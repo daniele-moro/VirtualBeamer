@@ -274,6 +274,8 @@ public class Gui {
 	
 	public void clientToLeader() {
 		frameClient.setVisible(false);
+//		frameClient.removeAll();
+//		frameClient = null;
 		masterFrame();
 		frameMaster.setVisible(true);
 		
@@ -281,6 +283,8 @@ public class Gui {
 	
 	public void leaderToClient() {
 		frameMaster.setVisible(false);
+//		frameMaster.removeAll();
+//		frameMaster = null;
 		clientFrame();
 		frameClient.setVisible(true);
 	}

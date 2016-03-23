@@ -90,7 +90,7 @@ class ConnectionServer extends Observable implements Runnable{
 	public ConnectionServer(NetworkLeaderHandler nlh, Controller controller) throws IOException{
 		super();
 		this.nlh=nlh;
-		serverSocket = new ServerSocket(Session.portLeader);
+		serverSocket = new ServerSocket(controller.getSession().getPortLeader());
 		this.controller=controller;
 	}
 	
