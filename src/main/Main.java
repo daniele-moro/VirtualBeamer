@@ -2,11 +2,13 @@ package main;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -25,6 +27,8 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+
+import com.sun.glass.events.ViewEvent;
 
 import controller.Controller;
 import events.HelloReply;
@@ -146,6 +150,24 @@ public class Main {
 			for(int i=0; i<selectedFile.length; i++){
 				try {
 					BufferedImage im = ImageIO.read(selectedFile[i]);
+					System.out.println("@@@@@@@@@”" + im);
+
+					//Gatto conversion start
+					ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+					ImageIO.write(im, "jpg", baos1);
+					byte[] bytes1 = baos1.toByteArray();
+					System.out.println("Before conversion: " + bytes1.length);
+					
+					Image convertedImage = im.getScaledInstance(700, 495, BufferedImage.TYPE_INT_ARGB);
+					im = new BufferedImage(700, 495, BufferedImage.TYPE_INT_ARGB);
+					im.getGraphics().drawImage(convertedImage, 0, 0, null);
+
+					ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
+					ImageIO.write(im, "jpg", baos2);
+					byte[] bytes2 = baos2.toByteArray();
+					System.out.println("After conversion: " + bytes2.length);
+					//Gattto conversion end
+							
 					System.out.println("Stampa immagine: " + im);
 					session.addSlide(ImageIO.read(selectedFile[i]));
 				} catch (IOException e) {
