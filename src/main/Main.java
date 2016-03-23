@@ -28,15 +28,13 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
-import com.sun.glass.events.ViewEvent;
-
-import controller.Controller;
-import events.HelloReply;
 import model.Session;
 import model.User;
 import view.Gui;
 import view.SessionButton;
 import view.View;
+import controller.Controller;
+import events.HelloReply;
 
 public class Main {
 
@@ -169,7 +167,7 @@ public class Main {
 					//Gattto conversion end
 							
 					System.out.println("Stampa immagine: " + im);
-					session.addSlide(ImageIO.read(selectedFile[i]));
+					session.addSlide(im);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

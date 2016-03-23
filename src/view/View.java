@@ -55,10 +55,10 @@ public class View {
 		//display new slide, can be the next one or the previous one
 		
 		//TODO: I have the BufferedImage, I have to resize it to fit the JPanel
-		Image resizedImage = slideToShow.getScaledInstance(700, 495, BufferedImage.TYPE_INT_ARGB);
+		//Image resizedImage = slideToShow.getScaledInstance(700, 495, BufferedImage.TYPE_INT_ARGB);
 
-		//changeSlide = new ImageIcon(slideToShow);
-		changeSlide = new ImageIcon(resizedImage);
+		changeSlide = new ImageIcon(slideToShow);
+//		changeSlide = new ImageIcon(resizedImage);
 		System.out.println(gui);
 		
 		//pass the Icon to the GUI to make the change
