@@ -370,9 +370,9 @@ class Receiverr extends Observable implements Runnable{
 			for(int i = 0; i < numSlide; i++) {
 				receivedPacket.put(i, new ArrayList<SlidePartData>());
 			}
-//			trs = new TimerReceiveSlide(this);
-//			timer = new Timer(true); 
-//			timer.scheduleAtFixedRate(trs, 2000, 1000);
+			trs = new TimerReceiveSlide(this);
+			timer = new Timer(true); 
+			timer.scheduleAtFixedRate(trs, 5000, 2000);
 		}
 	}
 
@@ -472,15 +472,10 @@ class Receiverr extends Observable implements Runnable{
 				}catch(StreamCorruptedException exc){
 					System.out.println("Sto ricevendo un pezzo di immagine");
 					if(!sender){
-//						trs = new TimerReceiveSlide(this);
-//						timer.cancel();
-//						timer = new Timer();
-//						timer.schedule(trs, 3000);
-						if(timer==null){
-							trs= new TimerReceiveSlide(this);
-							timer = new Timer();
-							timer.scheduleAtFixedRate(trs, 1000, 2000);
-						}
+						trs = new TimerReceiveSlide(this);
+						timer.cancel();
+						timer = new Timer();
+						timer.schedule(trs, 750);
 						System.out.println("ricevuto pezzo di immagine");
 						//Le immagini mi interessano solo se non sono il sender
 						//Qui forse stiamo ricevendo l'immagine
@@ -523,15 +518,14 @@ class Receiverr extends Observable implements Runnable{
 						receivedPacket.get((int)slice.sessionNumber).set(slice.sequenceNumber, slice);
 
 						//Controllo se devo mandare NACK
-						//TODO -1 dello short?????
-//						if(slice.sequenceNumber-1 >= 0){
-//							if(receivedPacket.get((int)slice.sessionNumber).get(slice.sequenceNumber-1) == null){
-//								System.out.println("INVIO NACK Session: "+ (int) slice.sessionNumber + "Sequence: " + (slice.sequenceNumber-1));
-//								//devo inviare il NACK per il pacchetto SeqNum= data[5]-1 e sessionNum=data[1], oppure bisogna usare l'ultimo sequenceN arrivato
-//								Nack evNack = new Nack((int) slice.sessionNumber, (int) (slice.sequenceNumber-1));
-//								sendEvent(evNack);
-//							}
-//						}
+						if(slice.sequenceNumber-1 >= 0){
+							if(receivedPacket.get((int)slice.sessionNumber).get(slice.sequenceNumber-1) == null){
+								System.out.println("INVIO NACK Session: "+ (int) slice.sessionNumber + "Sequence: " + (slice.sequenceNumber-1));
+								//devo inviare il NACK per il pacchetto SeqNum= data[5]-1 e sessionNum=data[1], oppure bisogna usare l'ultimo sequenceN arrivato
+								Nack evNack = new Nack((int) slice.sessionNumber, (int) (slice.sequenceNumber-1));
+								sendEvent(evNack);
+							}
+						}
 //						for(int i=k; i<=slice.sessionNumber; i++){
 //							int j=0;
 //							for(SlidePartData elem: receivedPacket.get(i) ){
@@ -604,6 +598,7 @@ class TimerReceiveSlide extends TimerTask{
 
 	@Override
 	public void run() {
+		System.out.println("--------------è Partito il timer per l'invio dei NACK--------------");
 		for(Map.Entry<Integer, List<SlidePartData>> entry : r.getReceivedPacket().entrySet()){
 			if(entry.getValue().size()==0) {
 				//non mi sono arrivati pacchetti di questa slide

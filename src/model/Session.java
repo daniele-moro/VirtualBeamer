@@ -45,6 +45,7 @@ public class Session extends Observable implements Serializable{
 
 
 	public Session(User leader, User sessionCreator, User myself, String path, String sessionName, String sessionIP) {
+		//this.portLeader = (int)(Math.random()*16382) + 49152; //genero una porta random per il download delle immagini
 		this.sessionCreator=sessionCreator;
 		this.myself=myself;
 		this.leader = leader;
