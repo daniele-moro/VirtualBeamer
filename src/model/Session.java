@@ -32,6 +32,7 @@ public class Session extends Observable implements Serializable{
 	
 	private transient boolean sessionStarted;
 	
+	//private int portLeader;
 
 	public boolean isSessionStarted() {
 		return sessionStarted;
