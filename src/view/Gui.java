@@ -223,6 +223,8 @@ public class Gui {
 		frameMaster.setVisible(true);
 		frameMaster.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+		
+		
 
 	}
 	
