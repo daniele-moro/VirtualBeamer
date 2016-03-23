@@ -66,7 +66,7 @@ public class Controller implements Observer{
 	}
 
 	public Controller(Session session, View view){
-		this.nextSender=1;
+		this.nextSender=0;
 		this.session=session;
 		this.view= view;
 		this.crashDetector = new CrashDetector(session, this);
@@ -310,6 +310,12 @@ public class Controller implements Observer{
 					if(crash.getCrashedUser().equals(session.getLeader())) {
 						System.out.println("+++++++++++++++++++++++++++++è crashato il leader e io sono il sessionCreator");
 						//chiudo l'handler precedente (da utente normale) e apro l'handler da leader
+						try {
+							networkHelloReceiver = new NetworkHelloReceiver(session);
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
 						session.setLeader(session.getMyself());
 						networkHandler.close();
 						networkHandler = null; 
@@ -395,22 +401,23 @@ public class Controller implements Observer{
 
 
 	public void startSession(){
-		//invio l'evento di start, che segnala quante slide ci sono da visualizzare
-
-		//Invio le slide
-		List<User> receivers = new ArrayList<User>(session.getJoined());
-		receivers.remove(session.getLeader());
-		MulticastDownload sendSlides = new MulticastDownload(session, session.getSlides().size(), true, receivers);
-		sendSlides.generatePackets(session.getSlides());
-		StartSession evStart = new StartSession(session.getSlides().size());
-		nlh.sendToUsers(evStart);
-		//		for(BufferedImage elem : session.getSlides()){
-		//			sendSlides.sendSlide(elem);
-		//		}
-		sendSlides.sendSlides();
-		view.presentationButtons();
-		session.setSessionStarted(true);
-		this.goTo(0);
+		if(session.getJoined().size()>1){
+			//invio l'evento di start, che segnala quante slide ci sono da visualizzare
+			//Invio le slide
+			List<User> receivers = new ArrayList<User>(session.getJoined());
+			receivers.remove(session.getLeader());
+			MulticastDownload sendSlides = new MulticastDownload(session, session.getSlides().size(), true, receivers);
+			sendSlides.generatePackets(session.getSlides());
+			StartSession evStart = new StartSession(session.getSlides().size());
+			nlh.sendToUsers(evStart);
+			//		for(BufferedImage elem : session.getSlides()){
+			//			sendSlides.sendSlide(elem);
+			//		}
+			sendSlides.sendSlides();
+			view.presentationButtons();
+			session.setSessionStarted(true);
+			this.goTo(0);
+		}
 	}
 
 	public void prev(){
@@ -503,26 +510,27 @@ public class Controller implements Observer{
 	}
 
 	private int findNextSender(int nextSenderIn) {
-		if(!session.getJoined().get(nextSenderIn).equals(session.getLeader())
-				&& nextSender < session.getJoined().size() -1) {
+
+		if(nextSender < session.getJoined().size() -1) {
 			return nextSenderIn;
-		}
-		for(int i = nextSender + 1; i < session.getJoined().size()-1; i++) {
-			if(!session.getJoined().get(i).equals(session.getLeader())) {
-				return i; 
-			}
-		}
-		for(int i = 0; i < nextSender && i < session.getJoined().size() -1; i++) {
-			if(!session.getJoined().get(i).equals(session.getLeader())) {
-				return i; 
-			}
-		}
-		for(int i = 0; i < session.getJoined().size() - 1; i++) {
-			if(session.getJoined().get(i).equals(session.getLeader())) {
-				return i; 
-			}
-		}
-		return 0; 
+		} 
+		return 0;
+		//		for(int i = nextSender + 1; i < session.getJoined().size()-1; i++) {
+		//			if(!session.getJoined().get(i).equals(session.getLeader())) {
+		//				return i; 
+		//			}
+		//		}
+		//		for(int i = 0; i < nextSender && i < session.getJoined().size() -1; i++) {
+		//			if(!session.getJoined().get(i).equals(session.getLeader())) {
+		//				return i; 
+		//			}
+		//		}
+		//		for(int i = 0; i < session.getJoined().size() - 1; i++) {
+		//			if(session.getJoined().get(i).equals(session.getLeader())) {
+		//				return i; 
+		//			}
+		//		}
+		//		return 0; 
 	}
 
 
