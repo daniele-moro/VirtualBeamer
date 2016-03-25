@@ -32,7 +32,6 @@ import model.User;
 
 /**
  * Classe per spedire e ricevere le slide in multicast
- * @author m-daniele
  *
  */
 public class MulticastDownload {
@@ -78,25 +77,9 @@ public class MulticastDownload {
 			Thread t = new Thread(receiverr);
 			t.start();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-
-
-	//	public void sendEnd(){
-	//		//invio l'evento di fine trasmissione slide in mutlicast
-	//		EndSlides end = new EndSlides();
-	//		receiverr.sendEvent(end);
-	//		while(!sentAll){
-	//			try {
-	//				this.wait();
-	//			} catch (InterruptedException e) {
-	//				// TODO Auto-generated catch block
-	//				e.printStackTrace();
-	//			}
-	//		}
-	//	}
 
 
 

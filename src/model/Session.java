@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 
-import events.GoTo;
-
 public class Session extends Observable implements Serializable{
 
 	

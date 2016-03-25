@@ -7,11 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
 
+/**
+ * Classe di metodi statici che si occupano solo di effettuare manipolazioni sui pacchetti
+ * @author m-daniele
+ *
+ */
 public class PacketCreator {
 
 	/* Flags and sizes */
@@ -24,6 +25,13 @@ public class PacketCreator {
 
 	public static String OUTPUT_FORMAT = "jpeg"; 
 
+	/**
+	 * Metodo per convertire una BufferedImage in un Array di Byte
+	 * @param image
+	 * @param format
+	 * @return
+	 * @throws IOException
+	 */
 	public static byte[] bufferedImageToByteArray(BufferedImage image, String format) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ImageIO.write(image, format, baos);
@@ -37,7 +45,7 @@ public class PacketCreator {
 	
 	/**
 	 * Il metodo genera tutti i pacchetti UDP a partire da un immagine e da un sessionNumber
-	 * L'immagine in input deve essere al max 16MB
+	 * L'immagine in input deve essere al max 16MB per stare dentro ad un unico sessionNumber
 	 * 
 	 * @param image (MAX 16MB)
 	 * @param sessionNumber
@@ -45,17 +53,6 @@ public class PacketCreator {
 	 * @throws IOException
 	 */
 	public static List<byte[]> createPackets(BufferedImage image, int sessionNumber) throws IOException{
-		/*JFrame frame = new JFrame();
-		frame.setSize(300, 300);
-		byte[] imageByteArray = bufferedImageToByteArray(image, OUTPUT_FORMAT);
-		ImageIcon im = new ImageIcon(imageByteArray);
-		JLabel l = new JLabel();
-		l.setIcon(im);
-		JPanel p = new JPanel();
-		p.add(l);
-		frame.add(p);
-		frame.setVisible(true);
-		*/
 		byte[] imageByteArray = bufferedImageToByteArray(image, OUTPUT_FORMAT);
 		int packets = (int) Math.ceil(imageByteArray.length / (float)DATAGRAM_MAX_SIZE);
 		List<byte[]> packetsList = new ArrayList<byte[]>();

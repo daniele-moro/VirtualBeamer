@@ -13,11 +13,9 @@ import events.Crash;
 import events.GenericEvent;
 import events.GoTo;
 import events.Join;
-import events.Nack;
 import events.NewLeader;
 import events.RequestToJoin;
 import events.SendSlideTo;
-import events.SlidePartData;
 import events.StartSession;
 import model.Session;
 import model.User;
@@ -26,14 +24,12 @@ import network.MulticastDownload;
 import network.NetworkHandler;
 import network.NetworkHelloReceiver;
 import network.NetworkLeaderHandler;
-import network.NetworkSlideSender;
 import view.Gui;
 import view.View;
 
 public class Controller implements Observer{
 
-	private Session session; 
-	private NetworkSlideSender slideSender;
+	private Session session;
 
 	private CrashDetector crashDetector; 
 
@@ -48,14 +44,10 @@ public class Controller implements Observer{
 	private View view;
 
 	//Socket e I/O sul socket bidirezionale verso/da il leader
-
-
 	private Map<GenericEvent, List<User>> ackedEvent;
 
 	private int nextSender;
 
-	private List<SlidePartData> tempArray;
-	private int currentSessionNumber=-1;
 
 	public Session getSession() {
 		return session;
@@ -102,38 +94,6 @@ public class Controller implements Observer{
 
 	}
 
-	//	public Controller(Session session) {
-	//		this.session = session;
-	//		view = new View(session,this); 
-	//		try {
-	//			slideSender = new NetworkSlideSender(session);
-	//			networkSender = new NetworkHandler(session);
-	//			networkReceiver = new NetworkReceiver(session, this);
-	//			ackedEvent = new HashMap<GenericEvent, List<User>>();
-	//			if(session.isLeader()){
-	//				networkHelloReceiver = new NetworkHelloReceiver(session);
-	//			}
-	//		} catch (IOException e) {
-	//			// TODO Auto-generated catch block
-	//			e.printStackTrace();
-	//		}
-	//	}
-
-	//	public Controller(){
-	//		try {
-	//			slideSender = new NetworkSlideSender(session);
-	//			networkSender = new NetworkHandler(session);
-	//			networkReceiver = new NetworkReceiver(session, this);
-	//			ackedEvent = new HashMap<GenericEvent, List<User>>();
-	//			if(session.isLeader()){
-	//				networkHelloReceiver = new NetworkHelloReceiver(session);
-	//			}
-	//		} catch (IOException e) {
-	//			// TODO Auto-generated catch block
-	//			e.printStackTrace();
-	//		}
-	//	}
-
 
 	@Override
 	public void update(Observable o, Object arg) {
@@ -143,33 +103,16 @@ public class Controller implements Observer{
 			throw new IllegalArgumentException();
 		}
 		switch(((GenericEvent) arg).getType()){
-		case ACK:
-			System.out.println("ACK RICEVUTO per il pezzetto di immagine");
-			if(session.isLeader()){
-				System.out.println("ddentro ack, sono leader");
-				slideSender.setCont();
-				//slideSender.notifyAll();
-
-			}
-			break;
 
 		case SEND_SLIDE_TO:{
 			SendSlideTo evSST = (SendSlideTo) arg;
 			List<User> receivers = new ArrayList<User>();
 			receivers.add(evSST.getReceiver());
 			MulticastDownload sendSlides = new MulticastDownload(session, session.getSlides().size(), true, receivers);
-			//			for(BufferedImage elem : session.getSlides()){
-			//				sendSlides.sendSlide(elem);
-			//			}
 			sendSlides.generatePackets(session.getSlides());
 			sendSlides.sendSlides();
 
 		}break;
-		case NACK:
-			if(session.isLeader()){
-				slideSender.sendMissingPacket(((Nack) arg).getSequenceNumber());
-			}
-			break;
 
 		case START_SESSION:
 			//inizia la sessione, devo ricevere le slide (solo sul client)

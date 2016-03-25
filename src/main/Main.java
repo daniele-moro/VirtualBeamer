@@ -8,7 +8,6 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -28,13 +27,13 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import controller.Controller;
+import events.HelloReply;
 import model.Session;
 import model.User;
 import view.Gui;
 import view.SessionButton;
 import view.View;
-import controller.Controller;
-import events.HelloReply;
 
 public class Main {
 
@@ -46,15 +45,6 @@ public class Main {
 
 		String userName;
 		String sessionName;
-		InetAddress group = null;
-		InetAddress globalLan = null;
-
-
-		try {
-			globalLan = InetAddress.getByName("228.5.6.8");
-		} catch (UnknownHostException e1) {
-			e1.printStackTrace();
-		}
 
 		//CREO tutte le istanze che mi servono per far funzionare il gioco
 		JFrame frame = new JFrame();
@@ -280,7 +270,6 @@ public class Main {
 		String msg = "hello";
 		MulticastSocket socket = new MulticastSocket(Session.portHello);
 		socket.joinGroup(globalLan);
-		int cont;
 		DatagramPacket hi = new DatagramPacket(msg.getBytes(), msg.length(), globalLan, Session.portHello);
 		socket.send(hi);
 		byte[] buf = new byte[1000];
@@ -309,6 +298,7 @@ public class Main {
 			// Ho ricevuto il mio stesso hello
 			e.printStackTrace();
 		}
+		socket.close();
 		return sessionList;
 
 	}
@@ -341,13 +331,11 @@ public class Main {
 
 class selectSessionHandler implements ActionListener
 {
-	private List<Session> sessionList;
 	private String userName; 
 	private User user;
 	private JFrame frame;
 	
 	public selectSessionHandler(List<Session> sessionList, String userName, JFrame frame){
-		this.sessionList = sessionList;
 		this.userName = userName;
 		this.frame = frame; 
 		

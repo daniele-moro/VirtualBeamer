@@ -1,44 +1,33 @@
 package network;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Observable;
 
 import controller.Controller;
 import events.GenericEvent;
-import model.Session;
 
 /**
- * Classe che si occupa di spedire i messaggi nel gruppo di multicast, usando il metodo send possiamo spedire un evento nella rete, cosi che venga effettuato il comando specificato
- * @author m-daniele
+ * Classe che si occupa di spedire i messaggi da parte dei client al server(leader) e da parte del server(leader)
+ * a tutti gli utenti della sessione
  *
  */
 public class NetworkHandler {
-//	private InetAddress group;
-//	private MulticastSocket socket;
-	private PrintWriter output;
-	private BufferedReader input;
+
 	private Socket socket;
 	private ObjectOutputStream oos;
 	private ObjectInputStream ois;
+	
+	//Thread che si occupa di ricevere i messaggi nel socket
 	private Thread receiverThread;
 	private SingleReceiver singleReceiver;
-	
-	
-//	public NetworkSender(Session session) throws IOException{
-//		this.session=session;
-//		group = InetAddress.getByName(session.getSessionIP());
-//		socket = new MulticastSocket(Session.port); //Da decidere se la porta la teniamo fissa per tutti o la decidiamo a runtime e la mettiamo in Session
-//		socket.joinGroup(group);
-//	}
-	
+
+
 	/**
-	 * Costruttore usato per aprire il socket da parte dei client, verso il serverSocket
+	 * Costruttore usato per aprire il socket da parte dei client, verso il serverSocket del server (leader)
 	 * @param ip
 	 * @param controller
 	 */
@@ -52,14 +41,17 @@ public class NetworkHandler {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			//Apro il socket verso il leader
 			socket = new Socket(ip, controller.getSession().getPortLeader());
-			
+			//istanzio gli stream di output e di input
 			oos  = new ObjectOutputStream(socket.getOutputStream());
 			oos.flush();
 			ois  = new ObjectInputStream(socket.getInputStream());
 			System.out.println("Ho creato oos, ois");
 			
+			//Il single receiver si occupa di ricevere i messaggi nel socket
 			singleReceiver = new SingleReceiver(ois);
+			//Aggiungo l'observer, cioè il controller che verrà notificato quando arriverà un utente
 			singleReceiver.addObserver(controller);
 			receiverThread = new Thread(singleReceiver);
 			System.out.println("Faccio partire il thread di ricezione");
@@ -71,11 +63,12 @@ public class NetworkHandler {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 	}
-	
+
 	/**
-	 * Costruttore usato dal serverSocket quando ha ricevuto la richiesta di apertura del socket
+	 * Costruttore usato dal serverSocket quando ha ricevuto la richiesta di apertura del socket per aprire il socket
+	 * per ricevere e spedire i messaggi
 	 * @param oos
 	 * @param ois
 	 * @param socket
@@ -86,6 +79,7 @@ public class NetworkHandler {
 		this.ois=ois;
 		this.socket=socket;
 		
+		//istanzio il thread che si occupa di ricever i messaggi
 		singleReceiver = new SingleReceiver(ois);
 		singleReceiver.addObserver(controller);
 		receiverThread = new Thread(singleReceiver);
@@ -93,19 +87,10 @@ public class NetworkHandler {
 		receiverThread.start();
 	}
 	
-	
-/*	public void send(GenericEvent event) throws IOException{
-		//Serializzazione dell'oggetto
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ObjectOutputStream oos = new ObjectOutputStream(baos);
-		oos.writeObject(event);
-		baos.toByteArray();
-		//Creazione del pacchetto
-		DatagramPacket packetedEvent = new DatagramPacket(baos.toByteArray(), baos.toByteArray().length, group, Session.port);
-		//Spedizione pacchetto
-		socket.send(packetedEvent);
-	}*/
-
+	/**
+	 * Metodo che si occupa di spedire un evento nel socket corrispondente all'istanza di questa classe
+	 * @param event
+	 */
 	public void send(GenericEvent event){
 		try {
 			oos.flush();
@@ -116,7 +101,10 @@ public class NetworkHandler {
 			e.printStackTrace();
 		}
 	}
-	
+
+	/**
+	 * Metodo per chiudere il socket e fermare il thread di ricezione dei messaggi
+	 */
 	public void close(){
 		try {
 			System.out.println("-----------------CHIUDO IL SOCKET------------------");
@@ -127,19 +115,29 @@ public class NetworkHandler {
 			e.printStackTrace();
 		}
 	}
-	
+
 
 }
+
+/**
+ * Classe che implementa il thread di ricezione dei messaggi
+ * si mette in ascolto e quando arriva un messaggio, notifica l'evento al controllore
+ * @author m-daniele
+ *
+ */
 class SingleReceiver extends Observable implements Runnable{
 	private ObjectInputStream ois;
 	private boolean terminate;
-	
+
 	public SingleReceiver(ObjectInputStream ois){
 		super();
 		this.ois=ois;
 		terminate=false;
 	}
-	
+
+	/**
+	 * Questo metodo permette di stoppare il thread in modo da bloccare la ricezione dei messaggi
+	 */
 	public void terminate(){
 		terminate=true;
 	}
@@ -147,11 +145,14 @@ class SingleReceiver extends Observable implements Runnable{
 	@Override
 	public void run() {
 		GenericEvent event = null;
+		//Continuo ad ascoltare finchè non viene invocato il metodo terminate()
 		while(!terminate){
 			try {
 				System.out.println("----Attendo un evento----");
+				//Attendo l'evento e lo deserializzo direttamente, gli stream vengono settati nel costruttore
 				if((event = (GenericEvent) ois.readObject()) !=null){
 					System.out.println("ricevuto un evento");
+					//Quando ricevo un evento notifico il controllore con l'evento correlato
 					setChanged();
 					notifyObservers(event);
 				}
@@ -169,6 +170,5 @@ class SingleReceiver extends Observable implements Runnable{
 			}
 		}
 	}
-	
 }
 

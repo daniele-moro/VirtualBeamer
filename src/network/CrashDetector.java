@@ -30,27 +30,47 @@ import model.Session;
 import model.User;
 
 /**
- * Classe che invia periodicamente in Multicast un messaggio per dire che è ancora vivo,
+ * Classe che invia periodicamente in Multicast un messaggio per dire che è ancora vivo (ALIVE),
  *  inoltre si occupa anche di ricevere questi messaggi e vedere se qualche nodo crasha.
+ *  Si occupa anche di inviare i messaggi di leader election, di riceverli e di notificare il controllore quando
+ *  la leader election ha trovato l'utente nuovo leader
  * @author m-daniele
  *
  */
 public class CrashDetector extends Observable{
-	private final static int SEND_INTERVAL = 250;
-	private final static int INCREMENT_INTERVAL = 250;
+	private final static int SEND_INTERVAL = 250;		//Intevallo di spedizione degli Alive
+	private final static int INCREMENT_INTERVAL = 250; //Intervallo di incremento del contatori counters
+	private final static int NUM_FAIL_ALIVE = 5;		//Numero di incrementi max prima di considerare un nodo crashato
+	
+	//Var per multicast (gruppo e socket)
 	private InetAddress group;
 	private MulticastSocket socket;
-	private final static int NUM_FAIL_ALIVE = 5;
+	
+	//Timer per inviare gli Alive
 	private TimerAlive timerHello;
+	
+	//Timer per effettuare gli incrementi
 	private TimerIncrement timerIncrements;
+	//Thread di ricezione degli Alive
 	private ReceiverAlive receiverAlive;
+	
 	private Session session;
 	private boolean alreadySentElect = false;
+	//Timer per effettuare il check dell'elezione
 	private Timer checkForElectionConfirm; 
 
+	//Mappa di contatori per vedere quali nodi crashano
 	private Map<User, Integer> counters;
 
 
+	/**
+	 * Costruttore che si occupa di aprire le connessioni al gruppo di multicast e di avviare:
+	 * - Thread per ricezione degli alive (receiverAlive)
+	 * - Timer periodico per l'invio degli alive (timerHello)
+	 * - Timer periodico per incrementare i contatori (timerIncrements)
+	 * @param session
+	 * @param controller
+	 */
 	public CrashDetector(Session session, Controller controller) {
 		this.addObserver(controller);
 		this.counters = new HashMap<User, Integer>();
@@ -95,17 +115,25 @@ public class CrashDetector extends Observable{
 		this.alreadySentElect = alreadySentElect;
 	}
 
+
+	/**
+	 * Metodo per effettuare l'incremento dei contatori
+	 * Quando un contatore arriva a NUM_FAIL_ALIVE, viene notificato il controllore con un evento di CRASH
+	 */
 	public synchronized void increment(){
 		List<User> crashedUsers = new ArrayList<User>();
 		for(Map.Entry<User, Integer> entry : counters.entrySet() ){
 			entry.setValue(entry.getValue()+1);
 			if(entry.getValue()>NUM_FAIL_ALIVE){
+				//Se ho avuto più di NUM_FAIL_ALIVE incrementi senza ricevere alive
+				//notifico il controller con l'evento di CRASH (specificando l'utente che è crashato)
 				crashedUsers.add(entry.getKey());
 				Crash crash = new Crash(entry.getKey());
 				setChanged();
 				notifyObservers(crash);
 			}	
 		}
+		//Tutti gli utenti che sono crashati, vengono rimossi dalla mappa con i contatori
 		for(User u : crashedUsers) {
 			removeUser(u);
 		}
@@ -116,6 +144,11 @@ public class CrashDetector extends Observable{
 		notifyObservers(event);
 	}
 
+	/**
+	 * Metodo per resettare il contatore dell'utente corrispondente, viene invocato dal receiverAlive
+	 * quando riceve l'alive dal utente corrispondente
+	 * @param user
+	 */
 	public synchronized void reset(User user){
 		//counters.remove(user); 
 		counters.put(user, 0);
@@ -130,6 +163,9 @@ public class CrashDetector extends Observable{
 		counters.put(user, 0);
 	}
 
+	/**
+	 * TODO MI SERVE DANI PER COMMENTARE QUESTO METODO
+	 */
 	public void startElect() {
 
 		Elect newElectEvent = new Elect(session.getMyself());
@@ -156,6 +192,13 @@ public class CrashDetector extends Observable{
 
 }
 
+/**
+ * Classe implementa il thread che si occupa di ricevere gli alive nel gruppo di multicast
+ * Si occupa anche di ricevere i messaggi che vengono spediti per la leader Election (ELECT, COORDINATE, STOP)
+ * Nota: ricordarsi che si ricevono anche gli alive spediti dal nodo stesso
+ * @author m-daniele
+ *
+ */
 class ReceiverAlive implements Runnable{
 	private InetAddress group;
 	private MulticastSocket socket;
@@ -177,18 +220,25 @@ class ReceiverAlive implements Runnable{
 			ByteArrayInputStream byteStream;
 			ObjectInputStream is;
 			try {
+				//Mi metto in attesa di un messaggio nel gruppo di multicast
 				socket.receive(recv);
+				
 				GenericEvent eventReceived = null;
 				byteStream = new ByteArrayInputStream(buf);
 				is = new ObjectInputStream(new BufferedInputStream(byteStream));
 
+				//Deserializzo l'evento
 				eventReceived=(GenericEvent) is.readObject();
 
+				//Ora controllo di che evento si tratta
+				//EVENTO: ALIVE
 				if(eventReceived instanceof Alive){
+					//Se l'evento ricevuto è ALIVE, allora devo resettare il counter corrispondente all'utente
 					Alive alv = (Alive) eventReceived;
 					cd.reset(alv.getAliveUser());
 				}
 
+				//EVENTO: ELECT
 				if(eventReceived instanceof Elect) {
 					//Nella elect c'è l'utente che vuole diventare leader
 					Elect elect = (Elect) eventReceived;
@@ -207,6 +257,7 @@ class ReceiverAlive implements Runnable{
 					}
 				}
 
+				//EVENTO: STOP
 				if(eventReceived instanceof Stop) {
 					//Nello stop c'è l'user da stoppare
 					Stop stop = (Stop) eventReceived;
@@ -215,6 +266,7 @@ class ReceiverAlive implements Runnable{
 					}
 				}
 
+				//EVENTO: COORDINATOR
 				if(eventReceived instanceof Coordinator) {
 					NewLeader nl = new NewLeader(((Coordinator) eventReceived).getNewLeader());
 					cd.notifyAfterCoordinator(nl);
@@ -231,11 +283,16 @@ class ReceiverAlive implements Runnable{
 
 	}
 
+	/**
+	 * Metodo generico per inviare un evento nel gruppo di multicast, serializzo l'evento e lo invio nel gruppo
+	 * @param event
+	 */
 	public synchronized void sendEvent(GenericEvent event) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos;
 		try {
 			oos = new ObjectOutputStream(baos);
+			//Serializzo l'evento che devo spedire
 			oos.writeObject(event);
 			baos.toByteArray();
 			//Creazione del pacchetto
@@ -251,6 +308,11 @@ class ReceiverAlive implements Runnable{
 
 }
 
+/**
+ * Classe che implementa il timer per l'incremento dei contatori per verificare quando un utente è crashato
+ * @author m-daniele
+ *
+ */
 class TimerIncrement extends TimerTask{
 
 	private CrashDetector cd;
@@ -262,12 +324,17 @@ class TimerIncrement extends TimerTask{
 
 	@Override
 	public void run() {
+		//chiamo il metodo del crashDetector che si occupa di effettuare l'incremento
 		cd.increment();	
 	}
 
 }
 
-
+/**
+ * Classe che implementa il timer per l'invio degli ALIVE nel gruppo di multicast
+ * @author m-daniele
+ *
+ */
 class TimerAlive extends TimerTask{
 	private InetAddress group;
 	private MulticastSocket socket;
@@ -282,9 +349,11 @@ class TimerAlive extends TimerTask{
 	@Override
 	public void run() {
 		try {
+			//Genero l'evento ALIVE, settando come utente me stesso
 			Alive alv = new Alive(session.getMyself());
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ObjectOutputStream oos = new ObjectOutputStream(baos);
+			//Serializzo l'evento
 			oos.writeObject(alv);
 			baos.toByteArray();
 			//Creazione del pacchetto

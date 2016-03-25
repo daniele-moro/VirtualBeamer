@@ -8,6 +8,11 @@ import java.util.List;
 
 import model.Session;
 
+/**
+ * Classe per gestire l'invio e la ricezione delle slide
+ * Usa un multicast di tipo reliable per inviare tutti i pacchetti di una slide
+ *
+ */
 public class NetworkSlideSender {
 	private Session session;
 	private InetAddress group;
@@ -30,6 +35,9 @@ public class NetworkSlideSender {
 		socket.joinGroup(group);
 	}
 	
+	/**
+	 * Metodo per inviare le slide, prima di chi
+	 */
 	private void sendSlide(){
 		sessionNumber++;
 		try {
