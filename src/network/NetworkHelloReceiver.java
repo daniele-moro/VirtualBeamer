@@ -17,7 +17,6 @@ import model.Session;
  * Classe per ricevere e gestire l'HELLO ricevuto nella rete multicast dedicata alla pubblicizzazione delle sessioni diponibili
  * Questa classe viene istanziata solo dal leader il quale sarà responsabile di rispondere ai messaggi degli utenti
  *  che vogliono scoprire quali sessioni sono disponibili
- * @author m-daniele
  *
  */
 public class NetworkHelloReceiver {
@@ -39,7 +38,6 @@ public class NetworkHelloReceiver {
 
 /**
  * Classe che implementa il thread di ricezione degli HELLO (messaggi per scoprire quali sessioni sono disponibili
- * @author m-daniele
  *
  */
 class HelloReceiver extends Observable implements Runnable{

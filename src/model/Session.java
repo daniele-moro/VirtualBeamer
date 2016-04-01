@@ -24,8 +24,6 @@ public class Session extends Observable implements Serializable{
 	private String sessionName;
 	private List<User> joined;
 	
-	//private List<User> potentialSender;
-	
 	private int actualSlide;
 	private String path;
 	private String sessionIP;

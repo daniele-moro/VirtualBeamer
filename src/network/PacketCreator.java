@@ -10,7 +10,6 @@ import javax.imageio.ImageIO;
 
 /**
  * Classe di metodi statici che si occupano solo di effettuare manipolazioni sui pacchetti
- * @author m-daniele
  *
  */
 public class PacketCreator {

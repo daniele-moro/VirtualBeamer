@@ -3,15 +3,9 @@ package view;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.BoxLayout;
@@ -22,28 +16,19 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 
-import com.sun.corba.se.spi.ior.iiop.GIOPVersion;
-
-import controller.Controller;
 import model.User;
+import controller.Controller;
 
 public class Gui {
 
-	private JFrame frameG; 
-	private ImageIcon currentSlide;
-	private static final String[] joinedUsers = {"Steve", "Bill", "Bezos", "Martin",
-			"Leonardo", "Heisenberg"};
-	private JList viewUsers;
 	private JButton nextSlide;
 	private JButton prevSlide;
 	private JPanel bottomPanel;
 	private int pos=0;
 	private Icon changeSlide;
 	private File[] presentationSlides;
-	private JButton giveControl;
 
 	private JFrame frameMaster;
 	private JFrame frameClient;
@@ -53,9 +38,6 @@ public class Gui {
 	private JPanel bottomInitPanel; 
 	private JButton startButton;
 	private JButton leaveButton;
-	private JFrame sessionsFrame;
-	private JPanel sessionsPanel;
-	private JButton selectSession;
 	private JPanel rightPanel;
 	private UserButton ub;
 
@@ -67,109 +49,6 @@ public class Gui {
 	public Gui() {
 
 	}
-
-//	public void NewPresentationSelect(File[] selectedFile) {
-//
-//		presentationSlides = selectedFile;
-//		//New JFrame for the master that has just created a new session
-//		frameG = new JFrame("New Virtual Beamer");
-//		frameG.setLayout(new BorderLayout() );
-//
-//		//Central Panel
-//		centralPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-//		centralSlide = new JLabel();
-//		System.out.println("Path of the first iamge: " + selectedFile[pos]);
-//		//currentSlide = new ImageIcon(getClass().getResource(selectedString[pos]));
-//		//currentSlide = selectedFile[pos];
-//		//currentSlide = new ImageIcon(getClass().getResource("//Users//gatto//Desktop//presentation//00.png"));
-//		currentSlide = new ImageIcon(presentationSlides[pos].getPath());
-//		centralSlide.setIcon(currentSlide);
-//		centralSlide.setVisible(true);
-//
-//		bottomPanel = new JPanel();
-//		bottomPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-//		prevSlide = new JButton("PREV");
-//		prevSlide.setIcon(new ImageIcon(this.getClass().getResource("prev.png")));
-//		prevSlide.setSize(250, 96);
-//		nextSlide = new JButton("NEXT");
-//		nextSlide.setIcon(new ImageIcon(this.getClass().getResource("next.png")));
-//		nextSlide.setSize(250, 96);
-//		bottomPanel.add(prevSlide);
-//		bottomPanel.add(nextSlide);
-//
-//		centralPanel.setTopComponent(centralSlide);
-//		centralPanel.setBottomComponent(bottomPanel);
-//		frameG.add(centralPanel, BorderLayout.CENTER);
-//
-//		//Right Panel with a JButton for each string inside joinedUsers
-//		//joinedUsers now is fixed, but it should be built as an ArrayList, adding new user
-//		JPanel rightPanel = new JPanel();
-//		rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-//		passControlHandler controlHandler = new passControlHandler();
-//
-//		for (String label : joinedUsers) {
-//			giveControl = new JButton(label);
-//			giveControl.setSize(200, 100);
-//			giveControl.addActionListener(controlHandler);
-//			rightPanel.add(giveControl); 
-//		}
-//		frameG.add(rightPanel, BorderLayout.EAST);
-//
-//		//Set visable the whole frame
-//		frameG.setVisible(true);
-//		frameG.pack();
-//		frameG.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//
-//
-//		//Button Handler
-//		//ButtonHandlerS handlerBS = new ButtonHandlerS(selectedPath);
-//		ButtonHandlerS handlerBS = new ButtonHandlerS();
-//		nextSlide.addActionListener(handlerBS);
-//		prevSlide.addActionListener(handlerBS);
-//
-//	}//End of New Presentation
-//	
-//	
-//
-//	private class ButtonHandlerS implements ActionListener
-//	{
-//		/*public ButtonHandlerS(ArrayList<String> selectedPath)
-//		{
-//			ArrayList<String> sel = selectedPath;
-//		}
-//		 */
-//
-//		public void actionPerformed(ActionEvent event)
-//		{
-//			if(event.getSource() == nextSlide)
-//			{
-//				if(pos == 5) 
-//				{
-//					pos=0;
-//				}
-//				System.out.println("I'm inside the ButtonHandlerS of nextSlide");
-//				pos++;
-//				System.out.println("Next position is: " + pos);
-//				changeSlide = new ImageIcon(presentationSlides[pos].getPath());
-//				centralSlide.setIcon(changeSlide);
-//			}
-//
-//			if(event.getSource() == prevSlide)
-//			{
-//				if(pos == 1)
-//				{
-//					pos = 6;
-//				}
-//				System.out.println("I'm inside the ButtonHandlerS of prevSlide");
-//				pos--;
-//				System.out.println("Next position is: " + pos);
-//				changeSlide = new ImageIcon(presentationSlides[pos].getPath());
-//				centralSlide.setIcon(changeSlide);
-//
-//			}
-//		}//End of Action Performed
-//	}//end of ButtonHandler
-
 
 	
 	public Controller getController() {
@@ -274,8 +153,6 @@ public class Gui {
 	
 	public void clientToLeader() {
 		frameClient.setVisible(false);
-//		frameClient.removeAll();
-//		frameClient = null;
 		masterFrame();
 		frameMaster.setVisible(true);
 		
@@ -283,8 +160,6 @@ public class Gui {
 	
 	public void leaderToClient() {
 		frameMaster.setVisible(false);
-//		frameMaster.removeAll();
-//		frameMaster = null;
 		clientFrame();
 		frameClient.setVisible(true);
 	}
@@ -322,7 +197,6 @@ public class Gui {
 
 
 	public void ChangeSlide(Icon icon) {
-		//TODO: change the current to the next/previous one
 		//The View call this method passing the correct new icon to visualize
 		centralSlide.setIcon(icon);
 		centralSlide.setPreferredSize(new Dimension(700, 495));
@@ -449,7 +323,6 @@ public class Gui {
 	{
 		public void actionPerformed(ActionEvent event)
 		{
-			//TODO: master press START and presentation can start (all users will visualize first slide)
 			controller.next();
 		}
 	}//End of class startHandler
@@ -458,7 +331,6 @@ public class Gui {
 	{
 		public void actionPerformed(ActionEvent event)
 		{
-			//TODO: master press START and presentation can start (all users will visualize first slide)
 			controller.prev();
 		}
 	}//End of class startHandler
@@ -470,7 +342,6 @@ public class Gui {
 	{
 		public void actionPerformed(ActionEvent event)
 		{
-			//TODO: client press on LEAVE and the user is disconnected
 			System.out.println("I've clicked on LEAVE button...");
 			System.exit(0);
 

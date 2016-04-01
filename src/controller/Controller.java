@@ -320,30 +320,6 @@ public class Controller implements Observer{
 
 	}
 
-	//	private void executeEvent(GenericEvent event) {
-	//		switch(((GenericEvent) event).getType()){
-	//		case GOTO:
-	//
-	//			break;
-	//		case JOIN:
-	//			System.out.println("Aggiunto user: " + ((Join)event).getJoiner().toString());
-	//			session.addJoinedUser(((Join) event).getJoiner());
-	//			break;
-	//		case NEWLEADER:
-	//			session.setLeader(((NewLeader) event).getNewLeader());
-	//			break;
-	//		case TERMINATE:
-	//			break;
-	//		}
-	//
-	//	}
-
-	//	private void sendAck(GenericEvent arg, User user){
-	//		AckEvent ack = new AckEvent(arg, user);
-	//		sendEvent(ack);
-	//	}
-
-
 	public void startSession(){
 		if(session.getJoined().size()>1){
 			//invio l'evento di start, che segnala quante slide ci sono da visualizzare

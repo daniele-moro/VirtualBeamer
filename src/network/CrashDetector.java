@@ -34,9 +34,9 @@ import model.User;
  *  inoltre si occupa anche di ricevere questi messaggi e vedere se qualche nodo crasha.
  *  Si occupa anche di inviare i messaggi di leader election, di riceverli e di notificare il controllore quando
  *  la leader election ha trovato l'utente nuovo leader
- * @author m-daniele
  *
  */
+
 public class CrashDetector extends Observable{
 	private final static int SEND_INTERVAL = 250;		//Intevallo di spedizione degli Alive
 	private final static int INCREMENT_INTERVAL = 250; //Intervallo di incremento del contatori counters
@@ -200,7 +200,6 @@ public class CrashDetector extends Observable{
  * Classe implementa il thread che si occupa di ricevere gli alive nel gruppo di multicast
  * Si occupa anche di ricevere i messaggi che vengono spediti per la leader Election (ELECT, COORDINATE, STOP)
  * Nota: ricordarsi che si ricevono anche gli alive spediti dal nodo stesso
- * @author m-daniele
  *
  */
 class ReceiverAlive implements Runnable{
@@ -320,7 +319,6 @@ class ReceiverAlive implements Runnable{
 
 /**
  * Classe che implementa il timer per l'incremento dei contatori per verificare quando un utente è crashato
- * @author m-daniele
  *
  */
 class TimerIncrement extends TimerTask{
@@ -342,7 +340,6 @@ class TimerIncrement extends TimerTask{
 
 /**
  * Classe che implementa il timer per l'invio degli ALIVE nel gruppo di multicast
- * @author m-daniele
  *
  */
 class TimerAlive extends TimerTask{

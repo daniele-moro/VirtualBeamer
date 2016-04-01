@@ -46,11 +46,10 @@ public class Main {
 		String userName;
 		String sessionName;
 
-		//CREO tutte le istanze che mi servono per far funzionare il gioco
+		//creo tutte le istanze che mi servono per far funzionare il gioco
 		JFrame frame = new JFrame();
 		JFrame sessionsFrame;
 		JPanel sessionsPanel;
-		//JButton selectSession;
 		SessionButton selectSession;
 
 		String[] optionsStart = {"NEW", "JOIN"};
@@ -106,11 +105,9 @@ public class Main {
 			}
 			System.out.println(user.getName() + " "+ user.getIp());
 
-			//OpenFile newOpen = new OpenFile(gui);
 			frame = new JFrame("Select");
 			frame.setLocationRelativeTo(null);
 
-			//frame.setSize(300, 300);
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 			JFileChooser fc = new JFileChooser(new File(""));
@@ -121,8 +118,6 @@ public class Main {
 			File[] selectedFile = fc.getSelectedFiles();
 			frame.setVisible(false);
 
-			
-			//TODO Creazione della sessione
 			List<String> listIp = new ArrayList<String>();
 			for(Session elem : sessionList){
 				listIp.add(elem.getSessionIP());
@@ -203,57 +198,6 @@ public class Main {
 			//sessionsFrame.pack();
 			sessionsFrame.setSize(600, 600);
 			sessionsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			
-//			System.out.println("Seleziona una sessione a cui fare la JOIN: ");
-//			int elem=0;
-//			try {
-//				elem= System.in.read() -48;
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//			System.out.println("Elemento Selezionato:" + elem);
-//			session = sessionList.get(elem-1);
-//			try {
-//				user = new User(userName, InetAddress.getLocalHost().getHostAddress(), 0);
-//			} catch (UnknownHostException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//			System.out.println("Session Leader: " + session.getLeader().getName());
-//			
-//			frameInit = new JFrame("Select");
-//			frameInit.setLocationRelativeTo(null);
-//			frameInit.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//			
-//			centralInitPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-//			centralInitSlide = new JLabel(); 
-//			currentInitSlide = new ImageIcon("src/main/clientStart.png");
-//			centralInitSlide.setIcon(currentInitSlide);
-//			centralInitSlide.setVisible(true);
-//			
-//			bottomInitPanel = new JPanel();
-//			bottomInitPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-//			startButton = new JButton("START");
-//			//prevSlide.setIcon(new ImageIcon(this.getClass().getResource("prev.png")));
-//			startButton.setSize(250, 96);
-//			bottomInitPanel.add(startButton);
-//
-//
-//			centralInitPanel.setTopComponent(centralInitSlide);
-//			centralInitPanel.setBottomComponent(bottomInitPanel);
-//			frameInit.add(centralInitPanel, BorderLayout.CENTER);
-//			frameInit.pack();
-//			frameInit.setVisible(true);
-//			
-//			
-//			
-//			
-//			session.setMyself(user);
-//			session.setSlides(new ArrayList<BufferedImage>());
-//			controller = new Controller(session);
-//			controller.requestToJoin();
-
 			break;
 
 		}
@@ -361,4 +305,5 @@ class selectSessionHandler implements ActionListener
 
 		
 	}
-}//End of class selectSessionHandler
+}
+//End of class selectSessionHandler

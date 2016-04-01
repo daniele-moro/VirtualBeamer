@@ -1,6 +1,5 @@
 package view;
 
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,9 +7,9 @@ import java.util.List;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import controller.Controller;
 import model.Session;
 import model.User;
+import controller.Controller;
 
 public class View {
 
@@ -18,7 +17,6 @@ public class View {
 	private Controller controller;
 	private Gui gui;
 	private Icon changeSlide;
-	private boolean sessionStarted = false;
 	
 	public View(Session session, Controller controller){
 		this.session=session;
@@ -46,31 +44,15 @@ public class View {
 
 
 	public void initGui(){
-		//TODO: when we first initialize the GUI, a start/wait slide appears
 		gui = new Gui();
 		gui.clientFrame();
 	}
 
 	public void changeSlide(BufferedImage slideToShow) {
 		//display new slide, can be the next one or the previous one
-		
-		//TODO: I have the BufferedImage, I have to resize it to fit the JPanel
-		//Image resizedImage = slideToShow.getScaledInstance(700, 495, BufferedImage.TYPE_INT_ARGB);
-
 		changeSlide = new ImageIcon(slideToShow);
-//		changeSlide = new ImageIcon(resizedImage);
-		System.out.println(gui);
-		
 		//pass the Icon to the GUI to make the change
 		gui.ChangeSlide(changeSlide);
-		/*if(!sessionStarted) {
-			sessionStarted = true; 
-			gui.presentationButtons();
-		}*/
-		
-
-		//TODO: add column with user lists
-
 
 	}
 	
@@ -80,8 +62,8 @@ public class View {
 	}
 
 	public void becomeMaster(){
+		//when invoked by the controller, change the GUI such that user becomes a master
 		gui.clientToLeader();
-		//TODO: when invoked by the controller, change the GUI such that user becomes a master
 		//button NEXT and PREV appear and also users list with possibility to select new master
 		gui.presentationButtons();
 	}
@@ -92,82 +74,6 @@ public class View {
 	public void presentationButtons(){
 		gui.presentationButtons();
 	}
-
-	
-	
-	
-
-//	//Ogni socket è "collegato" ad un utente della sessione
-//	Map<User, Socket> socketsList;
-//	GenericEvent event;
-//
-//	public View (){
-//		socketsList = new HashMap<User, Socket>();
-//
-//
-//		class EventReceiver implements Runnable{
-//			Socket s; 
-//			public EventReceiver(Socket s) {
-//				this.s = s; 
-//			}
-//
-//			public void run() {
-//				try {
-//					waitMessage(s);
-//				} catch (ClassNotFoundException e) {
-//					e.printStackTrace();
-//				} catch (IOException e) {
-//					e.printStackTrace();
-//				}
-//
-//			}
-//		}
-//
-//		for(Socket socket : socketsList.values()) {
-//			(new Thread(new EventReceiver(socket))).start();
-//		}
-//	}
-//
-//	private void waitMessage(Socket s) throws IOException, ClassNotFoundException {
-//		GenericEvent event = null; 
-//		ObjectInputStream in; 
-//		while(true) {
-//			in = (new ObjectInputStream(s.getInputStream())); 
-//			event = (GenericEvent)in.readObject(); 
-//			if(event!=null) {
-//				setChanged(); 
-//				notifyObservers(event); 
-//			}
-//		}
-//	}
-//
-//	@Override
-//	public void next() {
-//		// TODO Auto-generated method stub
-//		//Creo evento next
-//
-//	}
-//
-//	@Override
-//	public void prev() {
-//		// TODO Auto-generated method stub
-//		//Crea evento prev
-//
-//	}
-//
-//	@Override
-//	public void newLeader() {
-//		// TODO Auto-generated method stub
-//		//Creo evento new Leader
-//
-//	}
-//
-//	@Override
-//	public void closeSession() {
-//		// TODO Auto-generated method stub
-//		//Creo evento close Session
-//
-//	}
 
 }
 

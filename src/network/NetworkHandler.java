@@ -122,7 +122,6 @@ public class NetworkHandler {
 /**
  * Classe che implementa il thread di ricezione dei messaggi
  * si mette in ascolto e quando arriva un messaggio, notifica l'evento al controllore
- * @author m-daniele
  *
  */
 class SingleReceiver extends Observable implements Runnable{
