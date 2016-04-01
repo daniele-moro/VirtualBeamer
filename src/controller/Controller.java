@@ -243,7 +243,9 @@ public class Controller implements Observer{
 		case CRASH: 
 			Crash crash = (Crash) arg;
 			System.out.println("crash di " + crash.getCrashedUser().getName());
+			//se il controller non ha già gestito questo evento di crash in precedenza, allora lo gestisce ora
 			if(session.getJoined().contains(crash.getCrashedUser())){
+				//rimuovo l'utente dalla lista degli utenti connessi alla sessione
 				removeUser(crash.getCrashedUser());
 				System.out.println("+++++++++++++Ho rilevato il CRASH");
 				System.out.println("+++++++++++++SessionCreator: "+ session.getSessionCreator().getName());
@@ -255,17 +257,17 @@ public class Controller implements Observer{
 						//chiudo l'handler precedente (da utente normale) e apro l'handler da leader
 						try {
 							networkHelloReceiver = new NetworkHelloReceiver(session);
+							//setto il nuovo leader
+							session.setLeader(session.getMyself());
+							networkHandler.close();
+							networkHandler = null; 
+							view.becomeMaster();
+							nlh = new NetworkLeaderHandler(this);
+							view.changeSlide(session.getSlides().get(session.getActualSlide()));
 						} catch (IOException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
-						session.setLeader(session.getMyself());
-						networkHandler.close();
-						networkHandler = null; 
-						view.becomeMaster();
-						nlh = new NetworkLeaderHandler(this);
-						view.changeSlide(session.getSlides().get(session.getActualSlide()));
-
 					} 
 				} else {
 					//non sono il session creator
@@ -295,7 +297,6 @@ public class Controller implements Observer{
 						}
 					} else {
 						//non è crashato il leader: rimuovo solo l'utente
-
 						if(session.isLeader()){
 							view.displayUsers(session.getJoined());
 						}

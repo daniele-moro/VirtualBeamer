@@ -164,7 +164,11 @@ public class CrashDetector extends Observable{
 	}
 
 	/**
-	 * TODO MI SERVE DANI PER COMMENTARE QUESTO METODO
+	 * Questo metodo viene eseguito quando l'utente inizia la leader election. Viene generato un evento 
+	 * "newElectEvent" che contiene una indicazione sull'utente che ha iniziato l'elezione (cioè colui
+	 * che sta eseguendo il metodo) e viene inviato a tutti. Poi l'utente fa partire un timer: alla scadenza
+	 * del timer, se non ha ricevuto messaggi di stop da altri, diventa il nuovo leader: in tal caso crea un 
+	 * evento "coordinator" e lo invia a tutti gli altri utenti. 
 	 */
 	public void startElect() {
 
@@ -244,13 +248,15 @@ class ReceiverAlive implements Runnable{
 					Elect elect = (Elect) eventReceived;
 					System.out.println(elect.getUser().getId() + ": questo è l'id di chi ha lanciato elect");
 					System.out.println(session.getMyself().getId() +": questo è l'id di chi ha ricevuto l'elect, cioè lo user attuale");
+					//se un utente riceve una elect da un altro utente e ha un id maggiore del suo, deve stoppare la sua election
+					//e eventualmente far partire una nuova election (se non l'ha già fatto)
 					if(!elect.getUser().equals(session.getMyself()) && elect.getUser().getId() < session.getMyself().getId()) {
 						System.out.println("devo mandare io lo stop per bloccare l'altro");
 						//invio stop per fermare l'elezione a quell'utente
 						Stop stop = new Stop(elect.getUser());
 						sendEvent(stop);
 						if(!cd.isAlreadySentElect()) {
-							//creo e invio la nuova elezione
+							//creo e invio la nuova elezione se non l'ho già iniziata
 							cd.setAlreadySentElect(true);
 							cd.startElect();
 						}
@@ -258,6 +264,8 @@ class ReceiverAlive implements Runnable{
 				}
 
 				//EVENTO: STOP
+				//Viene ricevuto da un utente che ha iniziato una elezione, ma questa deve essere stoppata, 
+				//perchè c'è un altro utente che è attivo e ha un id maggiore del suo
 				if(eventReceived instanceof Stop) {
 					//Nello stop c'è l'user da stoppare
 					Stop stop = (Stop) eventReceived;
@@ -267,6 +275,8 @@ class ReceiverAlive implements Runnable{
 				}
 
 				//EVENTO: COORDINATOR
+				//Viene ricevuto da un utente quando è terminata la leader election: colui che invia
+				//questo evento è il nuovo leader. 
 				if(eventReceived instanceof Coordinator) {
 					NewLeader nl = new NewLeader(((Coordinator) eventReceived).getNewLeader());
 					cd.notifyAfterCoordinator(nl);
