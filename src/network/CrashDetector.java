@@ -18,12 +18,15 @@ import java.util.Observable;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.media.jai.CoordinateImage;
+
 import events.Coordinator;
 import controller.Controller;
 import events.Alive;
 import events.BullyAck;
 import events.Crash;
 import events.Elect;
+import events.EventType;
 import events.GenericEvent;
 import events.NewLeader;
 import events.Stop;
@@ -38,7 +41,7 @@ import model.User;
  *
  */
 public class CrashDetector extends Observable{
-	private final static int SEND_INTERVAL = 10;		//Intevallo di spedizione degli Alive
+	private final static int SEND_INTERVAL = 250;		//Intevallo di spedizione degli Alive
 	private final static int INCREMENT_INTERVAL = 250; //Intervallo di incremento del contatori counters
 	private final static int NUM_FAIL_ALIVE = 5;		//Numero di incrementi max prima di considerare un nodo crashato
 
@@ -57,7 +60,7 @@ public class CrashDetector extends Observable{
 	private Session session;
 	private boolean alreadySentElect = false;
 	//Timer per effettuare il check dell'elezione
-	private Timer checkForElectionConfirm; 
+	protected Timer checkForElectionConfirm; 
 
 	//Mappa di contatori per vedere quali nodi crashano
 	private Map<User, Integer> counters;
@@ -188,23 +191,24 @@ public class CrashDetector extends Observable{
 		Elect newElectEvent = new Elect(session.getMyself());
 		receiverAlive.sendEvent(newElectEvent, true);
 		alreadySentElect = true;
-		checkForElectionConfirm = new Timer(true);
-		checkForElectionConfirm.schedule(new TimerTask()  {
-
-			@Override
-			public void run() {
-				System.out.println("sono il nuovo leader!");
-				Coordinator c = new Coordinator(session.getMyself());
-				receiverAlive.sendEvent(c, true); 
-
-			}
-		}, 1000);
+//		checkForElectionConfirm = new Timer(true);
+//		checkForElectionConfirm.schedule(new TimerTask()  {
+//
+//			@Override
+//			public void run() {
+//				System.out.println("sono il nuovo leader!");
+//				Coordinator c = new Coordinator(session.getMyself());
+//				receiverAlive.sendEvent(c, true); 
+//
+//			}
+//		}, 1000);
 
 
 	}
 
 	public void stopElect(){
-		checkForElectionConfirm.cancel();
+		//TODO: questo metodo cosi, nn dovrebbe più servire
+		//checkForElectionConfirm.cancel();
 	}
 
 }
@@ -261,11 +265,7 @@ class ReceiverAlive implements Runnable{
 
 				//EVENTO: ELECT
 				if(eventReceived instanceof Elect) {
-					if(!notAckedUsers.containsKey(eventReceived)){
-						//Invio l'ACK
-						BullyAck evAck = new BullyAck(session.getMyself(), eventReceived);
-						sendEvent(evAck, false);
-					}
+					
 					//Nella elect c'è l'utente che vuole diventare leader
 					Elect elect = (Elect) eventReceived;
 					System.out.println(elect.getUser().getId() + ": questo è l'id di chi ha lanciato elect");
@@ -279,8 +279,14 @@ class ReceiverAlive implements Runnable{
 						sendEvent(stop, true);
 						if(!cd.isAlreadySentElect()) {
 							//creo e invio la nuova elezione se non l'ho già iniziata
-							cd.setAlreadySentElect(true);
 							cd.startElect();
+						}
+					} else {
+						//Invio l'ack solo se non ho inviato la STOP
+						if(!notAckedUsers.containsKey(eventReceived)){
+							//Invio l'ACK
+							BullyAck evAck = new BullyAck(session.getMyself(), eventReceived);
+							sendEvent(evAck, false);
 						}
 					}
 					cd.setAlreadySentElect(true);
@@ -297,6 +303,17 @@ class ReceiverAlive implements Runnable{
 							//Invio l'ACK
 							BullyAck evAck = new BullyAck(session.getMyself(), eventReceived);
 							sendEvent(evAck, false);
+						}
+						//Devo eliminare la ELECT dagli eventi di cui attendo l'ack, perchè la stop blocca la elect appena inviata
+						for(Map.Entry<GenericEvent, List<User>> el: notAckedUsers.entrySet()){
+							if(el.getKey().getType()==EventType.ELECT){
+								//Allora devo eliminare la elect e non devo più attendere gli ack
+								timers.get(el.getKey()).cancel();
+								timers.remove(el.getKey());
+								notAckedUsers.remove(el.getKey());
+								
+								break;
+							}
 						}
 						cd.stopElect();
 					}
@@ -327,6 +344,12 @@ class ReceiverAlive implements Runnable{
 								timers.get(evAck.getEventToAck()).cancel();
 								timers.remove(evAck.getEventToAck());
 								notAckedUsers.remove(evAck.getEventToAck());
+								//Se ho ricevuto l'ack da tutti e l'evento è una ELECT, allora devo mandare la coordinate
+								if(evAck.getEventToAck() instanceof Elect){
+									//Ho ricevuto l'ack da tutti, quindi devo mandare la Coordinator
+									Coordinator c = new Coordinator(session.getMyself());
+									sendEvent(c, true); 
+								}
 							}
 						}
 					}
