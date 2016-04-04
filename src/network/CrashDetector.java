@@ -21,6 +21,7 @@ import java.util.TimerTask;
 import events.Coordinator;
 import controller.Controller;
 import events.Alive;
+import events.BullyAck;
 import events.Crash;
 import events.Elect;
 import events.GenericEvent;
@@ -36,24 +37,23 @@ import model.User;
  *  la leader election ha trovato l'utente nuovo leader
  *
  */
-
 public class CrashDetector extends Observable{
-	private final static int SEND_INTERVAL = 100;		//Intevallo di spedizione degli Alive
+	private final static int SEND_INTERVAL = 250;		//Intevallo di spedizione degli Alive
 	private final static int INCREMENT_INTERVAL = 250; //Intervallo di incremento del contatori counters
 	private final static int NUM_FAIL_ALIVE = 5;		//Numero di incrementi max prima di considerare un nodo crashato
-	
+
 	//Var per multicast (gruppo e socket)
 	private InetAddress group;
 	private MulticastSocket socket;
-	
+
 	//Timer per inviare gli Alive
 	private TimerAlive timerHello;
-	
+
 	//Timer per effettuare gli incrementi
 	private TimerIncrement timerIncrements;
 	//Thread di ricezione degli Alive
 	private ReceiverAlive receiverAlive;
-	
+
 	private Session session;
 	private boolean alreadySentElect = false;
 	//Timer per effettuare il check dell'elezione
@@ -173,7 +173,7 @@ public class CrashDetector extends Observable{
 	public void startElect() {
 
 		Elect newElectEvent = new Elect(session.getMyself());
-		receiverAlive.sendEvent(newElectEvent);
+		receiverAlive.sendEvent(newElectEvent, true);
 		alreadySentElect = true;
 		checkForElectionConfirm = new Timer(true);
 		checkForElectionConfirm.schedule(new TimerTask()  {
@@ -182,7 +182,7 @@ public class CrashDetector extends Observable{
 			public void run() {
 				System.out.println("sono il nuovo leader!");
 				Coordinator c = new Coordinator(session.getMyself());
-				receiverAlive.sendEvent(c); 
+				receiverAlive.sendEvent(c, true); 
 
 			}
 		}, 1000);
@@ -207,12 +207,17 @@ class ReceiverAlive implements Runnable{
 	private MulticastSocket socket;
 	private CrashDetector cd;
 	private Session session;
+	private Map<GenericEvent, Timer> timers;
+	private Map<GenericEvent, List<User>> notAckedUsers;
 
 	public ReceiverAlive(InetAddress group, MulticastSocket socket, CrashDetector cd, Session session){
 		this.group=group;
 		this.socket=socket;
 		this.cd=cd;
 		this.session = session;
+		this.notAckedUsers = new HashMap<GenericEvent, List<User>>();
+		this.timers = new HashMap<GenericEvent, Timer>();
+
 	}
 
 	@Override
@@ -225,7 +230,7 @@ class ReceiverAlive implements Runnable{
 			try {
 				//Mi metto in attesa di un messaggio nel gruppo di multicast
 				socket.receive(recv);
-				
+
 				GenericEvent eventReceived = null;
 				byteStream = new ByteArrayInputStream(buf);
 				is = new ObjectInputStream(new BufferedInputStream(byteStream));
@@ -243,6 +248,11 @@ class ReceiverAlive implements Runnable{
 
 				//EVENTO: ELECT
 				if(eventReceived instanceof Elect) {
+					if(!notAckedUsers.containsKey(eventReceived)){
+						//Invio l'ACK
+						BullyAck evAck = new BullyAck(session.getMyself(), eventReceived);
+						sendEvent(evAck, false);
+					}
 					//Nella elect c'è l'utente che vuole diventare leader
 					Elect elect = (Elect) eventReceived;
 					System.out.println(elect.getUser().getId() + ": questo è l'id di chi ha lanciato elect");
@@ -253,7 +263,7 @@ class ReceiverAlive implements Runnable{
 						System.out.println("devo mandare io lo stop per bloccare l'altro");
 						//invio stop per fermare l'elezione a quell'utente
 						Stop stop = new Stop(elect.getUser());
-						sendEvent(stop);
+						sendEvent(stop, true);
 						if(!cd.isAlreadySentElect()) {
 							//creo e invio la nuova elezione se non l'ho già iniziata
 							cd.setAlreadySentElect(true);
@@ -269,6 +279,11 @@ class ReceiverAlive implements Runnable{
 					//Nello stop c'è l'user da stoppare
 					Stop stop = (Stop) eventReceived;
 					if(stop.getUser().equals(session.getMyself())) {
+						if(!notAckedUsers.containsKey(eventReceived)){
+							//Invio l'ACK
+							BullyAck evAck = new BullyAck(session.getMyself(), eventReceived);
+							sendEvent(evAck, false);
+						}
 						cd.stopElect();
 					}
 				}
@@ -277,8 +292,30 @@ class ReceiverAlive implements Runnable{
 				//Viene ricevuto da un utente quando è terminata la leader election: colui che invia
 				//questo evento è il nuovo leader. 
 				if(eventReceived instanceof Coordinator) {
+					if(!notAckedUsers.containsKey(eventReceived)){
+						//Invio l'ACK
+						BullyAck evAck = new BullyAck(session.getMyself(), eventReceived);
+						sendEvent(evAck, false);
+					}
 					NewLeader nl = new NewLeader(((Coordinator) eventReceived).getNewLeader());
 					cd.notifyAfterCoordinator(nl);
+				}
+
+				//EVENTO: BULLYACK
+				if(eventReceived instanceof BullyAck){
+					BullyAck evAck = (BullyAck) eventReceived;
+					if(!evAck.getUser().equals(session.getMyself())){
+						System.out.println("ack ricevuto dall'utente " + evAck.getUser().getName() + " per l'evento " + evAck.getEventToAck().getType());
+						if(notAckedUsers.containsKey(evAck.getEventToAck())){
+							notAckedUsers.get(evAck.getEventToAck()).remove(evAck.getUser());
+							if(notAckedUsers.get(evAck.getEventToAck()).isEmpty()){
+								System.out.println("elimino l'evento dal not acked e annullo il timer");
+								timers.get(evAck.getEventToAck()).cancel();
+								timers.remove(evAck.getEventToAck());
+								notAckedUsers.remove(evAck.getEventToAck());
+							}
+						}
+					}
 				}
 
 			} catch (IOException e) {
@@ -296,7 +333,8 @@ class ReceiverAlive implements Runnable{
 	 * Metodo generico per inviare un evento nel gruppo di multicast, serializzo l'evento e lo invio nel gruppo
 	 * @param event
 	 */
-	public synchronized void sendEvent(GenericEvent event) {
+	public synchronized void sendEvent(GenericEvent event, boolean ack) {
+		System.out.println("sto inviando l'evento " + event.getType() + " e sono l'utente " + session.getMyself());
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos;
 		try {
@@ -306,6 +344,24 @@ class ReceiverAlive implements Runnable{
 			baos.toByteArray();
 			//Creazione del pacchetto
 			DatagramPacket packetedEvent = new DatagramPacket(baos.toByteArray(), baos.toByteArray().length, group, Session.port);
+			if(ack){
+				if(!notAckedUsers.containsKey(event)){
+					notAckedUsers.put(event, new ArrayList<User>());
+					//Se devo aspettare gli ack, devo creare una lista con gli utenti da cui ricevere l'ack
+					if(event instanceof Stop){
+						//Qui devo aggiungere alla lista solo l'utente che deve essere stoppato
+						notAckedUsers.get(event).add( ((Stop) event).getUser());
+					} else {
+						//Tutti gli altri eventi devono venire ackati da tutti gli altri utenti, tranne me stesso
+						notAckedUsers.get(event).addAll(session.getJoined());
+						notAckedUsers.get(event).remove(session.getMyself());
+					}
+				}
+				//Qui devo far partire il timer
+				Timer timerResend = new Timer(true);
+				timerResend.schedule(new TimerResend(event, this), 200);
+				timers.put(event, timerResend);
+			}
 			//Spedizione pacchetto
 			socket.send(packetedEvent);
 		} catch (IOException e) {
@@ -313,6 +369,27 @@ class ReceiverAlive implements Runnable{
 			e.printStackTrace();
 		}
 
+	}
+
+}
+
+class TimerResend extends TimerTask{
+
+	private GenericEvent event;
+	private ReceiverAlive receiver;
+
+	public TimerResend(GenericEvent event, ReceiverAlive receiver){
+		super();
+		this.event=event;
+		this.receiver=receiver;
+
+	}
+
+	@Override
+	public void run() {
+		System.out.println("devo rimandare l'evento " + event.getType() + " perchè è scattato timer");
+		//Quando questo timer scatta, devo reinviare l'evento correlato al timer stesso
+		receiver.sendEvent(event, true);
 	}
 
 }
