@@ -38,7 +38,7 @@ import model.User;
  */
 
 public class CrashDetector extends Observable{
-	private final static int SEND_INTERVAL = 250;		//Intevallo di spedizione degli Alive
+	private final static int SEND_INTERVAL = 100;		//Intevallo di spedizione degli Alive
 	private final static int INCREMENT_INTERVAL = 250; //Intervallo di incremento del contatori counters
 	private final static int NUM_FAIL_ALIVE = 5;		//Numero di incrementi max prima di considerare un nodo crashato
 	

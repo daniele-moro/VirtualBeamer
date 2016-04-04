@@ -195,9 +195,18 @@ public class MulticastDownload {
 			System.out.println("NUMSLIDE RIMANENTI: " +numSlide);
 			if(numSlide==0){
 				System.out.println("INVIO L'ACK");
-				//Ho finito di ricevere le immagini, mando l'ACK
-				Ack evAck = new Ack(session.getMyself());
-				receiverr.sendEvent(evAck);
+				//Invio più volte l'ACK per essere sicuro che venga ricevuto
+				for(int i=0; i<4; i++){
+					//Ho finito di ricevere le immagini, mando l'ACK
+					Ack evAck = new Ack(session.getMyself());
+					receiverr.sendEvent(evAck);
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 				//Stoppo il thread in ricezione
 				receiverr.setRun(false);
 			}
@@ -420,7 +429,7 @@ class Receiverr extends Observable implements Runnable{
 								sendEvent(evNack);
 							}
 						}
-						
+
 						//Controllare se ho finito una slide
 						while(k < numSlide && receivedPacket.get(k).size()>0 && !receivedPacket.get(k).contains(null)){
 							System.out.println("FINITO UNA SLIDE?");
