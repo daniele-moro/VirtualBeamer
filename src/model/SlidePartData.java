@@ -1,4 +1,4 @@
-package events;
+package model;
 
 public class SlidePartData {
 	public short sequenceNumber;

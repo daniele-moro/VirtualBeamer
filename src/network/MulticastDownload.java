@@ -26,8 +26,8 @@ import javax.imageio.ImageIO;
 import events.Ack;
 import events.GenericEvent;
 import events.Nack;
-import events.SlidePartData;
 import model.Session;
+import model.SlidePartData;
 import model.User;
 
 /**

@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 
-import events.AckEvent;
 import events.Crash;
 import events.GenericEvent;
 import events.GoTo;
@@ -177,31 +176,13 @@ public class Controller implements Observer{
 			//Aggiorno la view con gli utenti
 			view.displayUsers(session.getJoined());
 			break;
-
-		case ACK_EVENT:
-			//Devo memorizzare tutti gli ack ricevuti e quando vengono ricevo un ack verifico se l'ho ricevuto da tutti
-			AckEvent event = (AckEvent)arg;
-			List<User> ackedUser = ackedEvent.get(event.getEvent());
-			if(!ackedUser.contains(event.getUser())){
-				ackedUser.add(event.getUser());
-			}
-			//Controlare che la lista di eventi negli ackedEvent
-			if(ackedUser.size() == session.getJoined().size()){
-				//Tutti gli utenti hanno inviato l'ack dell'evento event
-				//Posso eseguire realmente l'evento
-				System.out.println("Sto per ESEGUIRE L'EVENTO: " + event.toString());
-				//this.executeEvent(event.getEvent());
-			}
-
-			break;
 		case JOIN:
 			//Sono un client e devo aggiungere un nuovo utente agli utenti della sessione
 			System.out.println("SONO NELLA JOIN, TUTTO VA BENE");
 			Join ev = (Join) arg;
 			session.addJoinedUser(ev.getJoiner());
 			crashDetector.addUser(ev.getJoiner());
-		case ANSWER:
-			break;
+			break; 
 		case GOTO:
 			session.setActualSlide(((GoTo)arg).getSlideToShow());
 			view.changeSlide(session.getSlides().get(((GoTo)arg).getSlideToShow()));
@@ -303,15 +284,6 @@ public class Controller implements Observer{
 					}
 				}
 			}
-
-
-			break;
-		case TERMINATE:
-			System.out.println("EVENTO!!! è uscita traffic");
-			ackedEvent.put((GenericEvent) arg, new ArrayList<User>());
-			//this.sendAck((GenericEvent)arg,session.getMyself());
-			break;
-		case HELLO:
 			break;
 		default:
 			break;
