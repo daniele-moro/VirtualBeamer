@@ -38,7 +38,7 @@ import model.User;
  *
  */
 public class CrashDetector extends Observable{
-	private final static int SEND_INTERVAL = 250;		//Intevallo di spedizione degli Alive
+	private final static int SEND_INTERVAL = 10;		//Intevallo di spedizione degli Alive
 	private final static int INCREMENT_INTERVAL = 250; //Intervallo di incremento del contatori counters
 	private final static int NUM_FAIL_ALIVE = 5;		//Numero di incrementi max prima di considerare un nodo crashato
 
@@ -129,8 +129,21 @@ public class CrashDetector extends Observable{
 				//notifico il controller con l'evento di CRASH (specificando l'utente che è crashato)
 				crashedUsers.add(entry.getKey());
 				Crash crash = new Crash(entry.getKey());
+				for(Map.Entry<GenericEvent, List<User>> el: receiverAlive.notAckedUsers.entrySet()){
+					el.getValue().remove(entry.getKey());
+					if(el.getValue().isEmpty()) {
+						System.out.println("è crashato quello che stavo aspettando per l'ack");
+						receiverAlive.timers.get(el.getKey()).cancel();
+						System.out.println("timer cancellato");
+						receiverAlive.timers.remove(el.getKey()).cancel();
+						System.out.println("timer rimosso");
+						receiverAlive.notAckedUsers.remove(el.getKey());
+						System.out.println("rimosso il notAcked");
+					}
+				}
 				setChanged();
 				notifyObservers(crash);
+				
 			}	
 		}
 		//Tutti gli utenti che sono crashati, vengono rimossi dalla mappa con i contatori
@@ -207,8 +220,8 @@ class ReceiverAlive implements Runnable{
 	private MulticastSocket socket;
 	private CrashDetector cd;
 	private Session session;
-	private Map<GenericEvent, Timer> timers;
-	private Map<GenericEvent, List<User>> notAckedUsers;
+	protected Map<GenericEvent, Timer> timers;
+	protected Map<GenericEvent, List<User>> notAckedUsers;
 
 	public ReceiverAlive(InetAddress group, MulticastSocket socket, CrashDetector cd, Session session){
 		this.group=group;
@@ -270,6 +283,7 @@ class ReceiverAlive implements Runnable{
 							cd.startElect();
 						}
 					}
+					cd.setAlreadySentElect(true);
 				}
 
 				//EVENTO: STOP
@@ -334,7 +348,7 @@ class ReceiverAlive implements Runnable{
 	 * @param event
 	 */
 	public synchronized void sendEvent(GenericEvent event, boolean ack) {
-		System.out.println("sto inviando l'evento " + event.getType() + " e sono l'utente " + session.getMyself());
+		System.out.println("sto inviando l'evento " + event.getType() + " questo è l'evento " + event.toString());
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos;
 		try {

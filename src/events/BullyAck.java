@@ -1,5 +1,7 @@
 package events;
 
+import java.util.EventObject;
+
 import model.User;
 
 public class BullyAck extends Ack {
@@ -19,6 +21,11 @@ public class BullyAck extends Ack {
 	
 	public GenericEvent getEventToAck(){
 		return this.eventToAck;
+	}
+
+	@Override
+	public String toString() {
+		return "evento che accko: " + this.eventToAck.getType();
 	}
 
 }
