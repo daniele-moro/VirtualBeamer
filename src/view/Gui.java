@@ -61,7 +61,7 @@ public class Gui {
 
 	public void masterFrame() {
 		frameMaster = new JFrame(controller.getSession().getMyself().getName());
-		frameMaster.setLocationRelativeTo(null);
+		//frameMaster.setLocationRelativeTo(null);
 		frameMaster.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frameMaster.setLayout(new BorderLayout());
 
@@ -109,7 +109,7 @@ public class Gui {
 	
 	public void masterFrame(int actualSlide) {
 		frameMaster = new JFrame(controller.getSession().getMyself().getName());
-		frameMaster.setLocationRelativeTo(null);
+		//frameMaster.setLocationRelativeTo(null);
 		frameMaster.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frameMaster.setLayout(new BorderLayout());
 
@@ -166,7 +166,7 @@ public class Gui {
 
 	public void clientFrame() {
 		frameClient = new JFrame("Client Frame");
-		frameClient.setLocationRelativeTo(null);
+		//frameClient.setLocationRelativeTo(null);
 		frameClient.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frameClient.setLayout(new BorderLayout());
 
